@@ -10,6 +10,9 @@ services:
       - "${PORT:-8888}:80"
     environment:
       - SERVER_NAME=${SERVER_NAME:-Linux Server Admin}
+      - WEB_USER=${WEB_USER:-admin}
+      - WEB_PASSWORD=${WEB_PASSWORD:-admin}
+      - DISABLE_AUTH=${DISABLE_AUTH:-false}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - GEMINI_MODEL=${GEMINI_MODEL:-gemini-1.5-flash}
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
