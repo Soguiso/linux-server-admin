@@ -1,6 +1,12 @@
 #!/bin/bash
 set -e
 
+# Se argumentos foram passados (ex: container dedicado server-telegram-bot), executa diretamente
+if [ $# -gt 0 ]; then
+    echo "=== [Microservice] Executando processo dedicado: $@ ==="
+    exec "$@"
+fi
+
 echo "=== Iniciando Linux Server Admin ==="
 mkdir -p /config
 
