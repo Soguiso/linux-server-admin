@@ -602,8 +602,8 @@
       <div class="brand">
         <div class="brand-icon">🚀</div>
         <div>
-          <h1>Soguiso Server</h1>
-          <p>Ubuntu 26.04 LTS • Central de Serviços & Agente IA</p>
+          <h1 id="server-title">Linux Server Admin</h1>
+          <p id="server-subtitle">Central de Serviços & Agente IA</p>
         </div>
       </div>
     </header>
@@ -653,10 +653,12 @@
       <div id="discovery-banners" style="margin-bottom: 1.2rem; display: flex; flex-direction: column; gap: 0.8rem;"></div>
       <div class="grid" id="web-grid"></div>
 
-      <div class="section-header" style="margin-top: 2.2rem;">
-        <div class="section-title">⚙️ Nós & Serviços em Background (4)</div>
+      <div id="bg-services-section" style="display: none; margin-top: 2.2rem;">
+        <div class="section-header">
+          <div class="section-title" id="bg-services-title">⚙️ Serviços em Background</div>
+        </div>
+        <div class="grid" id="bg-grid"></div>
       </div>
-      <div class="grid" id="bg-grid"></div>
     </div>
 
     <!-- TAB 2: AI AGENT -->
@@ -913,129 +915,7 @@ Você pode me pedir qualquer tarefa em linguagem natural — tanto por aqui quan
   </div>
 
   <script>
-    let webServices = [
-      {
-            "id": "authentik",
-            "name": "Authentik SSO",
-            "category": "Identidade & Autenticação MFA",
-            "desc": "Plataforma SSO, MFA biométrico (Face ID / WebAuthn) e controle de acesso.",
-            "protocol": "http",
-            "port": 9000,
-            "path": "",
-            "icon": "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/authentik.png",
-            "fallbackIcon": "🔐",
-            "color": "rgba(244, 63, 94, 0.18)"
-      },
-      {
-            "id": "npm",
-            "name": "Nginx Proxy Manager",
-            "category": "Proxy Reverso & SSL",
-            "desc": "Gerenciamento visual de domínios, certificados SSL Let's Encrypt e redirecionamentos.",
-            "protocol": "http",
-            "port": 81,
-            "path": "",
-            "icon": "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/nginx-proxy-manager.png",
-            "fallbackIcon": "🔀",
-            "color": "rgba(234, 88, 12, 0.18)"
-      },
-      {
-            "id": "portainer",
-            "name": "Portainer CE",
-            "category": "Gerenciamento Docker",
-            "desc": "Administração visual de containers, imagens, volumes, stacks e redes Docker.",
-            "protocol": "https",
-            "port": 9443,
-            "path": "",
-            "icon": "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/portainer.png",
-            "fallbackIcon": "🐳",
-            "color": "rgba(14, 165, 233, 0.18)"
-      },
-      {
-            "id": "n8n",
-            "name": "n8n",
-            "category": "Automação & IA",
-            "desc": "Plataforma de automação de fluxos de trabalho, integrações de API e agentes.",
-            "protocol": "http",
-            "port": 5678,
-            "path": "",
-            "icon": "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/n8n.png",
-            "fallbackIcon": "⚡",
-            "color": "rgba(249, 115, 22, 0.18)"
-      },
-      {
-            "id": "uptime-kuma",
-            "name": "Uptime Kuma",
-            "category": "Monitoramento de Status",
-            "desc": "Monitoramento contínuo de disponibilidade HTTP/TCP/Ping e alertas de serviços.",
-            "protocol": "http",
-            "port": 3001,
-            "path": "",
-            "icon": "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/uptime-kuma.png",
-            "fallbackIcon": "📈",
-            "color": "rgba(34, 197, 94, 0.18)"
-      },
-      {
-            "id": "netdata",
-            "name": "Netdata",
-            "category": "Telemetria em Tempo Real",
-            "desc": "Métricas detalhadas de CPU, RAM, disco, rede e containers em tempo real.",
-            "protocol": "http",
-            "port": 19999,
-            "path": "",
-            "icon": "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/netdata.png",
-            "fallbackIcon": "📊",
-            "color": "rgba(16, 185, 129, 0.18)"
-      },
-      {
-            "id": "stirling-pdf",
-            "name": "Stirling-PDF",
-            "category": "Utilitários de Documentos",
-            "desc": "Suíte completa para converter, juntar, dividir, comprimir e editar arquivos PDF.",
-            "protocol": "http",
-            "port": 8080,
-            "path": "",
-            "icon": "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/stirling-pdf.png",
-            "fallbackIcon": "📄",
-            "color": "rgba(239, 68, 68, 0.18)"
-      },
-      {
-            "id": "watchyourlan",
-            "name": "WatchYourLAN",
-            "category": "Scanner de Rede Local",
-            "desc": "Monitoramento de IPs, MACs e histórico de dispositivos conectados na sua LAN.",
-            "protocol": "http",
-            "port": 8840,
-            "path": "",
-            "icon": "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/watchyourlan.png",
-            "fallbackIcon": "📡",
-            "color": "rgba(59, 130, 246, 0.18)"
-      },
-      {
-            "id": "grass-node",
-            "name": "Grass Node (noVNC)",
-            "category": "Acesso Remoto Desktop",
-            "desc": "Interface gráfica via navegador (noVNC) do container Grass Node. Login/Senha VNC: money4band",
-            "protocol": "http",
-            "port": 6080,
-            "path": "/vnc_auto.html",
-            "cred": "money4band",
-            "icon": "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/novnc.png",
-            "fallbackIcon": "🌱",
-            "color": "rgba(132, 204, 22, 0.18)"
-      },
-      {
-            "id": "mysterium",
-            "name": "Mysterium Node",
-            "category": "Painel do Nó dVPN",
-            "desc": "Dashboard de controle, tráfego e ganhos do nó Mysterium Network (myst).",
-            "protocol": "http",
-            "port": 4449,
-            "path": "",
-            "icon": "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/mysterium.png",
-            "fallbackIcon": "🛡️",
-            "color": "rgba(168, 85, 247, 0.18)"
-      }
-];
+    let webServices = [];
 
     async function loadServices() {
       try {
@@ -1104,14 +984,6 @@ Você pode me pedir qualquer tarefa em linguagem natural — tanto por aqui quan
       }
     }
 
-    const bgServices = [
-      { name: "Golem Provider", category: "Computação Descentralizada", desc: "Container golem-provider (yagna) ativo compartilhando recursos computacionais.", tag: "Container: golem-provider", icon: "🧱", color: "rgba(99, 102, 241, 0.18)" },
-      { name: "Honeygain", category: "Compartilhamento de Banda", desc: "Container priceless_villani executando em segundo plano no Docker.", tag: "Container: priceless_villani", icon: "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/honeygain.png", fallbackIcon: "🐝", color: "rgba(245, 158, 11, 0.18)" },
-      { name: "EarnApp", category: "Serviço Systemd", desc: "Daemon nativo earnapp.service rodando diretamente no Ubuntu host.", tag: "systemd: earnapp.service", icon: "💰", color: "rgba(20, 184, 166, 0.18)" },
-      { name: "Docker Telegram Monitor + IA", category: "Bot & Agente Gemini", desc: "Bot no Telegram integrado com Google Gemini e alertas em tempo real.", tag: "systemd: docker-telegram-monitor", icon: "🤖", color: "rgba(56, 189, 248, 0.18)" }
-    ];
-
-    
     let discoveredCache = [];
 
     async function checkDiscoveredServices() {
@@ -1220,33 +1092,63 @@ Você pode me pedir qualquer tarefa em linguagem natural — tanto por aqui quan
       });
     });
 
+    let runningContainerPorts = new Set();
+    let runningContainerNames = new Set();
+
     function renderWebServices() {
       const grid = document.getElementById("web-grid");
+      const title = document.getElementById("services-sec-title");
+      if (!grid) return;
       grid.innerHTML = "";
+
+      if (title) {
+        title.textContent = `🌐 Aplicações & Painéis Web (${webServices.length})`;
+      }
+
+      if (!webServices || webServices.length === 0) {
+        grid.innerHTML = `
+          <div style="grid-column: 1 / -1; padding: 2.8rem 1.5rem; text-align: center; background: rgba(15, 23, 42, 0.4); border: 1px dashed rgba(56, 189, 248, 0.25); border-radius: 12px;">
+            <div style="font-size: 2.2rem; margin-bottom: 0.6rem;">✨</div>
+            <div style="font-weight: 700; font-size: 1.05rem; color: #fff; margin-bottom: 0.35rem;">Nenhuma Aplicação Web Cadastrada</div>
+            <div style="color: var(--text-muted); font-size: 0.85rem; max-width: 480px; margin: 0 auto 1.25rem;">
+              Inicie containers com portas HTTP/HTTPS no Docker para detecção automática, ou adicione atalhos personalizados.
+            </div>
+            <button class="btn btn-primary" onclick="openAddServiceModal()" style="font-size: 0.85rem; padding: 0.5rem 1.2rem; border-radius: 8px;">＋ Adicionar Primeiro Serviço</button>
+          </div>
+        `;
+        return;
+      }
+
       webServices.forEach((s) => {
+        const isRunning = runningContainerPorts.has(s.port) || 
+                          runningContainerNames.has((s.id || "").toLowerCase()) ||
+                          runningContainerNames.has((s.name || "").toLowerCase());
+        const pillClass = isRunning ? "status-pill" : "status-pill stopped";
+        const pillText = isRunning ? "Ativo" : "Inativo";
         const url = s.customUrl ? s.customUrl : `${s.protocol}://${currentHost}:${s.port}${s.path || ""}`;
         const card = document.createElement("a");
         card.className = "card";
         card.href = url;
         card.target = "_blank";
         card.rel = "noopener noreferrer";
+
+        const iconHtml = (s.icon && (s.icon.startsWith('http') || s.icon.endsWith('.png') || s.icon.endsWith('.svg'))) 
+          ? `<img src="${s.icon}" alt="${s.name}" class="service-logo" onerror="this.onerror=null; this.parentElement.textContent='${s.fallbackIcon || '🌐'}';" />` 
+          : (s.icon || '🌐');
+
         card.innerHTML = `
           <div>
             <div class="card-top">
               <div class="service-info">
-                <div class="service-icon" style="background:${s.color}">
-                ${(s.icon && (s.icon.startsWith('http') || s.icon.endsWith('.png') || s.icon.endsWith('.svg'))) 
-                  ? `<img src="${s.icon}" alt="${s.name}" class="service-logo" onerror="this.onerror=null; this.parentElement.textContent='${s.fallbackIcon || '🌐'}';" />` 
-                  : (s.icon || '🌐')}
-              </div>
+                <div class="service-icon" style="background:${s.color}">${iconHtml}</div>
                 <div>
                   <div class="service-name">${s.name}</div>
                   <div class="service-cat">${s.category}</div>
                 </div>
               </div>
-              <div class="status-pill"><span class="status-dot"></span>Ativo</div>
+              <div class="${pillClass}"><span class="status-dot"></span>${pillText}</div>
             </div>
-            <div class="card-desc">${s.desc}${s.cred ? `<div style="margin-top:0.55rem;"><span style="display:inline-flex;align-items:center;gap:0.35rem;background:rgba(132,204,22,0.14);border:1px solid rgba(132,204,22,0.35);color:#bef264;padding:0.2rem 0.55rem;border-radius:6px;font-family:ui-monospace,monospace;font-size:0.78rem;">🔑 Login VNC: <strong>${s.cred}</strong></span></div>` : ""}</div>
+            <div class="card-desc">${s.desc || ""}${s.cred ? `<div style="margin-top:0.55rem;"><span style="display:inline-flex;align-items:center;gap:0.35rem;background:rgba(132,204,22,0.14);border:1px solid rgba(132,204,22,0.35);color:#bef264;padding:0.2rem 0.55rem;border-radius:6px;font-family:ui-monospace,monospace;font-size:0.78rem;">🔑 Login VNC: <strong>${s.cred}</strong></span></div>` : ""}</div>
           </div>
           <div class="card-footer">
             <span class="port-tag">${s.tagLabel || `${s.protocol.toUpperCase()} :${s.port}${s.path || ""}`}</span>
@@ -1257,37 +1159,41 @@ Você pode me pedir qualquer tarefa em linguagem natural — tanto por aqui quan
       });
     }
 
-    function renderBgServices() {
+    function renderBgServices(bgContainers) {
+      const section = document.getElementById("bg-services-section");
       const grid = document.getElementById("bg-grid");
-      grid.innerHTML = "";
-      bgServices.forEach((s) => {
-        const card = document.createElement("div");
-        card.className = "card";
-        card.innerHTML = `
+      const title = document.getElementById("bg-services-title");
+      if (!section || !grid) return;
+
+      if (!bgContainers || bgContainers.length === 0) {
+        section.style.display = "none";
+        grid.innerHTML = "";
+        return;
+      }
+
+      section.style.display = "block";
+      if (title) title.textContent = `⚙️ Serviços em Background (${bgContainers.length})`;
+      grid.innerHTML = bgContainers.map(c => `
+        <div class="card">
           <div>
             <div class="card-top">
               <div class="service-info">
-                <div class="service-icon" style="background:${s.color}">
-                ${(s.icon && (s.icon.startsWith('http') || s.icon.endsWith('.png') || s.icon.endsWith('.svg'))) 
-                  ? `<img src="${s.icon}" alt="${s.name}" class="service-logo" onerror="this.onerror=null; this.parentElement.textContent='${s.fallbackIcon || '🌐'}';" />` 
-                  : (s.icon || '🌐')}
-              </div>
+                <div class="service-icon" style="background:rgba(99,102,241,0.18)">📦</div>
                 <div>
-                  <div class="service-name">${s.name}</div>
-                  <div class="service-cat">${s.category}</div>
+                  <div class="service-name">${c.name}</div>
+                  <div class="service-cat">${c.image}</div>
                 </div>
               </div>
               <div class="status-pill"><span class="status-dot"></span>Rodando</div>
             </div>
-            <div class="card-desc">${s.desc}</div>
+            <div class="card-desc">Container ativo executando em segundo plano sem porta web exposta.</div>
           </div>
           <div class="card-footer">
-            <span class="port-tag">${s.tag}</span>
-            <span style="color:var(--text-muted)">Background</span>
+            <span class="port-tag">Container</span>
+            <span style="color:var(--text-muted); font-size:0.78rem;">Background</span>
           </div>
-        `;
-        grid.appendChild(card);
-      });
+        </div>
+      `).join("");
     }
 
     // Overview & Container Manager
@@ -1482,7 +1388,6 @@ Você pode me pedir qualquer tarefa em linguagem natural — tanto por aqui quan
     renderWebServices();
     loadServices();
     checkDiscoveredServices();
-    renderBgServices();
     loadOverview();
     setInterval(() => {
       loadOverview();

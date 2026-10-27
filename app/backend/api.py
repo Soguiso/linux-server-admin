@@ -39,41 +39,21 @@ os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(os.path.dirname(HTPASSWD_PATH), exist_ok=True)
 
 # Default Services Template if services.json does not exist
-DEFAULT_SERVICES = [
-    {
-        "id": "portainer",
-        "name": "Portainer CE",
-        "category": "Gerenciamento Docker",
-        "desc": "Administração visual de containers, imagens, volumes e stacks.",
-        "protocol": "https",
-        "port": 9443,
-        "path": "",
-        "icon": "🐳",
-        "color": "rgba(14, 165, 233, 0.18)"
-    },
-    {
-        "id": "npm",
-        "name": "Nginx Proxy Manager",
-        "category": "Proxy Reverso & SSL",
-        "desc": "Gerenciamento visual de domínios, certificados SSL Let's Encrypt e redirecionamentos.",
-        "protocol": "http",
-        "port": 81,
-        "path": "",
-        "icon": "🔀",
-        "color": "rgba(234, 88, 12, 0.18)"
-    },
-    {
-        "id": "authentik",
-        "name": "Authentik SSO",
-        "category": "Identidade & MFA",
-        "desc": "Plataforma de autenticação, WebAuthn biométrico e controle de acessos.",
-        "protocol": "http",
-        "port": 9000,
-        "path": "",
-        "icon": "🔐",
-        "color": "rgba(244, 63, 94, 0.18)"
-    }
-]
+# Clean default for new server installs (Auto-Discovery will detect real running containers)
+DEFAULT_SERVICES = []
+
+def get_host_os() -> str:
+    for p in ["/host/os-release", "/etc/os-release"]:
+        if os.path.exists(p):
+            try:
+                with open(p, "r", encoding="utf-8") as f:
+                    for line in f:
+                        if line.startswith("PRETTY_NAME="):
+                            return line.split("=", 1)[1].strip().strip('"')
+            except Exception:
+                pass
+    return f"{platform.system()} {platform.release()}"
+
 
 def load_services() -> list:
     if os.path.exists(SERVICES_FILE):
@@ -279,7 +259,8 @@ def get_system_overview() -> dict:
         "memory": {"total": "", "used": "", "percent": ""},
         "disk": {"total": "", "used": "", "percent": ""},
         "containers": [],
-        "os": f"{platform.system()} {platform.release()}"
+        "os": get_host_os(),
+        "background_containers": []
     }
 
     # Uptime
@@ -359,13 +340,17 @@ def get_system_overview() -> dict:
                     continue
                 p = line.split("|")
                 if len(p) >= 4:
-                    overview["containers"].append({
+                    is_running = p[1].startswith("Up")
+                    c_info = {
                         "name": p[0],
                         "status": p[1],
                         "image": p[2],
                         "ports": p[3],
-                        "running": p[1].startswith("Up")
-                    })
+                        "running": is_running
+                    }
+                    overview["containers"].append(c_info)
+                    if is_running and "->" not in p[3] and p[0] != "linux-server-admin":
+                        overview["background_containers"].append(c_info)
     except Exception:
         pass
 

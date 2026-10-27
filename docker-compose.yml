@@ -15,6 +15,7 @@ services:
     volumes:
       # Permite gerenciar todos os containers do servidor host
       - /var/run/docker.sock:/var/run/docker.sock
+      - /etc/os-release:/host/os-release:ro
       # Dados persistentes (servi?os salvos, hist?rico, config)
       - ./data:/data
       # Configura??es do Nginx interno e senhas (.htpasswd)
