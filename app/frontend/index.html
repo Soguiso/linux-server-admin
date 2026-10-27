@@ -1119,9 +1119,28 @@ Você pode me pedir qualquer tarefa em linguagem natural — tanto por aqui quan
       }
 
       webServices.forEach((s) => {
-        const isRunning = runningContainerPorts.has(s.port) || 
-                          runningContainerNames.has((s.id || "").toLowerCase()) ||
-                          runningContainerNames.has((s.name || "").toLowerCase());
+        const sPort = Number(s.port);
+        const sId = (s.id || "").toLowerCase();
+        const sName = (s.name || "").toLowerCase();
+
+        const aliases = {
+          "npm": ["nginx-proxy-manager", "npm"],
+          "mysterium": ["myst", "mysterium"],
+          "authentik": ["authentik-server", "authentik-server-1", "authentik"]
+        };
+        const extraNames = aliases[sId] || [];
+
+        let isRunning = (s.active === true);
+        if (!isRunning) {
+          isRunning = runningContainerPorts.has(sPort) ||
+                      runningContainerNames.has(sId) ||
+                      runningContainerNames.has(sName) ||
+                      extraNames.some(an => runningContainerNames.has(an)) ||
+                      Array.from(runningContainerNames).some(cn => 
+                        (sId && (cn.includes(sId) || (sId.includes(cn) && cn.length > 2))) ||
+                        (sName && (cn.includes(sName) || (sName.includes(cn) && cn.length > 2)))
+                      );
+        }
         const pillClass = isRunning ? "status-pill" : "status-pill stopped";
         const pillText = isRunning ? "Ativo" : "Inativo";
         const url = s.customUrl ? s.customUrl : `${s.protocol}://${currentHost}:${s.port}${s.path || ""}`;
@@ -1214,7 +1233,20 @@ Você pode me pedir qualquer tarefa em linguagem natural — tanto por aqui quan
 
         const mgr = document.getElementById("containers-mgr-grid");
         mgr.innerHTML = "";
+        runningContainerPorts.clear();
+        runningContainerNames.clear();
+
         (data.containers || []).forEach((c) => {
+          if (c.running) {
+            const cName = (c.name || "").toLowerCase();
+            runningContainerNames.add(cName);
+            if (c.ports) {
+              const portMatches = c.ports.match(/\d+/g);
+              if (portMatches) {
+                portMatches.forEach(p => runningContainerPorts.add(Number(p)));
+              }
+            }
+          }
           const card = document.createElement("div");
           card.className = "card";
           const pillClass = c.running ? "status-pill" : "status-pill stopped";
@@ -1244,6 +1276,9 @@ Você pode me pedir qualquer tarefa em linguagem natural — tanto por aqui quan
           `;
           mgr.appendChild(card);
         });
+
+        renderWebServices();
+        renderBgServices(data.background_containers || []);
       } catch (e) {
         console.error("Erro ao carregar overview:", e);
       }

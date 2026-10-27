@@ -96,6 +96,61 @@ def save_services(services: list):
             json.dump(services, f, indent=2, ensure_ascii=False)
     except Exception as e:
         print(f"Erro ao salvar services.json: {e}")
+def get_enriched_services() -> list:
+    services = load_services()
+    try:
+        res = subprocess.run(
+            ["docker", "ps", "--format", "{{.Names}}|{{.Status}}|{{.Ports}}"],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        running_ports = set()
+        running_names = set()
+        if res.returncode == 0:
+            for line in res.stdout.strip().splitlines():
+                if not line.strip():
+                    continue
+                parts = line.split("|")
+                name = parts[0].strip().lower()
+                status = parts[1].strip() if len(parts) > 1 else ""
+                ports_str = parts[2].strip() if len(parts) > 2 else ""
+                if status.startswith("Up"):
+                    running_names.add(name)
+                    if ports_str:
+                        for p in re.findall(r"\d+", ports_str):
+                            running_ports.add(int(p))
+
+        aliases = {
+            "npm": ["nginx-proxy-manager", "npm"],
+            "mysterium": ["myst", "mysterium"],
+            "authentik": ["authentik-server", "authentik-server-1", "authentik"]
+        }
+
+        enriched = []
+        for s in services:
+            s_copy = dict(s)
+            s_id = (s.get("id") or "").lower()
+            s_name = (s.get("name") or "").lower()
+            port = int(s.get("port") or 0)
+
+            is_active = (port in running_ports)
+            if not is_active:
+                if s_id in running_names or s_name in running_names:
+                    is_active = True
+                else:
+                    extra = aliases.get(s_id, [])
+                    if any(any(an in cn for cn in running_names) for an in extra):
+                        is_active = True
+                    elif any((s_id and s_id in cn) or (cn in s_id and len(cn) > 2) for cn in running_names):
+                        is_active = True
+            s_copy["active"] = is_active
+            enriched.append(s_copy)
+        return enriched
+    except Exception as e:
+        print(f"Erro ao enriquecer servicos: {e}")
+        return services
+
 
 # Ensure initial services file exists
 if not os.path.exists(SERVICES_FILE):
@@ -692,7 +747,7 @@ class AdminAPIHandler(BaseHTTPRequestHandler):
                 save_dismissed(dismissed)
             self._send_json({"ok": True, "dismissed": dismissed})
         elif self.path.startswith("/api/services"):
-            self._send_json({"services": load_services()})
+            self._send_json({"services": get_enriched_services()})
 
         elif self.path.startswith("/api/users"):
             self._send_json(get_users_data())
