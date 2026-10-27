@@ -81,6 +81,12 @@ PORT=8888
 # Nome do servidor exibido no cabeçalho
 SERVER_NAME="Meu Servidor Linux"
 
+# Autenticação de Acesso ao Painel (HTTP Basic Auth)
+WEB_USER="admin"
+WEB_PASSWORD="admin"
+# Defina DISABLE_AUTH="true" se usar proteção externa (ex: Authentik, Cloudflare Zero Trust)
+DISABLE_AUTH="false"
+
 # Chave de API Google Gemini (opcional, para ativar o Agente IA)
 # Obtenha gratuitamente em: https://aistudio.google.com/
 GEMINI_API_KEY=""
@@ -98,6 +104,11 @@ docker compose up -d
 
 Pronto! Acesse pelo navegador:
 👉 **`http://SEU-IP:8888`**
+
+> 🔒 **Segurança Ativa por Padrão:** O painel solicitará usuário e senha ao abrir.
+> - **Usuário padrão:** `admin`
+> - **Senha padrão:** `admin` (ou os valores customizados no `.env`)
+> - Altere a senha ou crie novos usuários logo após o primeiro acesso na seção **Usuários do Painel**.
 
 ---
 
