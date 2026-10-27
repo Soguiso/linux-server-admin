@@ -47,6 +47,24 @@ if not os.path.exists(HTPASSWD_PATH):
 # Clean default for new server installs (Auto-Discovery will detect real running containers)
 DEFAULT_SERVICES = []
 
+def is_host_accessible() -> bool:
+    """Checks if container has privileged/nsenter access to the host system."""
+    try:
+        res = subprocess.run(
+            ["nsenter", "-t", "1", "-m", "-u", "-i", "-n", "-p", "--", "true"],
+            capture_output=True,
+            timeout=2
+        )
+        return res.returncode == 0
+    except Exception:
+        return False
+
+def host_cmd(args):
+    """Executes command on host OS via nsenter if accessible, else locally."""
+    if is_host_accessible():
+        return ["nsenter", "-t", "1", "-m", "-u", "-i", "-n", "-p", "--"] + list(args)
+    return list(args)
+
 def get_host_os() -> str:
     for p in ["/host/os-release", "/etc/os-release"]:
         if os.path.exists(p):
@@ -270,7 +288,7 @@ def get_system_overview() -> dict:
 
     # Uptime
     try:
-        res = subprocess.run(["uptime", "-p"], capture_output=True, text=True, timeout=3)
+        res = subprocess.run(host_cmd(["uptime", "-p"]), capture_output=True, text=True, timeout=3)
         overview["uptime"] = res.stdout.strip() if res.returncode == 0 else ""
     except Exception:
         pass
@@ -320,7 +338,7 @@ def get_system_overview() -> dict:
 
     # Disk
     try:
-        df_out = subprocess.check_output(["df", "-h", "/"], text=True, timeout=5).splitlines()
+        df_out = subprocess.check_output(host_cmd(["df", "-h", "/"]), text=True, timeout=5).splitlines()
         if len(df_out) >= 2:
             cols = df_out[1].split()
             overview["disk"] = {
@@ -384,37 +402,45 @@ def get_users_data() -> dict:
         except Exception as e:
             data["web_error"] = str(e)
 
-    # 2. System Users
+    # 2. System Users (Host or Container)
     try:
-        with open("/etc/passwd", "r", encoding="utf-8") as f:
-            for line in f:
-                parts = line.strip().split(":")
-                if len(parts) >= 7:
-                    uname, _, uid_s, gid_s, gecos, home, shell = parts[:7]
-                    try:
-                        uid = int(uid_s)
-                    except ValueError:
-                        continue
-                    if (uid >= 1000 and uid != 65534) or uid == 0:
-                        groups = []
-                        try:
-                            res = subprocess.run(["groups", uname], capture_output=True, text=True, timeout=3)
-                            if res.returncode == 0:
-                                grp_str = res.stdout.split(":", 1)[-1].strip()
-                                groups = [g.strip() for g in grp_str.split() if g.strip()]
-                        except Exception:
-                            pass
+        passwd_content = ""
+        if is_host_accessible():
+            res = subprocess.run(host_cmd(["cat", "/etc/passwd"]), capture_output=True, text=True, timeout=5)
+            if res.returncode == 0:
+                passwd_content = res.stdout
+        if not passwd_content and os.path.exists("/etc/passwd"):
+            with open("/etc/passwd", "r", encoding="utf-8") as f:
+                passwd_content = f.read()
 
-                        data["system_users"].append({
-                            "username": uname,
-                            "uid": uid,
-                            "home": home,
-                            "shell": shell,
-                            "gecos": gecos.split(",")[0] if gecos else "",
-                            "groups": groups,
-                            "is_sudo": "sudo" in groups or uid == 0,
-                            "is_docker": "docker" in groups
-                        })
+        for line in passwd_content.splitlines():
+            parts = line.strip().split(":")
+            if len(parts) >= 7:
+                uname, _, uid_s, gid_s, gecos, home, shell = parts[:7]
+                try:
+                    uid = int(uid_s)
+                except ValueError:
+                    continue
+                if (uid >= 1000 and uid != 65534) or uid == 0:
+                    groups = []
+                    try:
+                        res = subprocess.run(host_cmd(["groups", uname]), capture_output=True, text=True, timeout=3)
+                        if res.returncode == 0:
+                            grp_str = res.stdout.split(":", 1)[-1].strip()
+                            groups = [g.strip() for g in grp_str.split() if g.strip()]
+                    except Exception:
+                        pass
+
+                    data["system_users"].append({
+                        "username": uname,
+                        "uid": uid,
+                        "home": home,
+                        "shell": shell,
+                        "gecos": gecos.split(",")[0] if gecos else "",
+                        "groups": groups,
+                        "is_sudo": "sudo" in groups or uid == 0,
+                        "is_docker": "docker" in groups
+                    })
     except Exception as e:
         data["system_error"] = str(e)
 
@@ -486,9 +512,9 @@ def execute_agent_tool(name: str, args: dict) -> dict:
         if name == "run_bash":
             cmd = args.get("command", "")
             cwd = args.get("cwd") or DEFAULT_WORKDIR
-            if not os.path.isdir(cwd):
-                cwd = DEFAULT_WORKDIR
-            res = subprocess.run(["bash", "-c", cmd], cwd=cwd, capture_output=True, text=True, timeout=45)
+            wrapped = f'cd "{cwd}" 2>/dev/null || cd /; {cmd}'
+            full_cmd = host_cmd(["bash", "-c", wrapped])
+            res = subprocess.run(full_cmd, capture_output=True, text=True, timeout=45)
             return {"exit_code": res.returncode, "stdout": res.stdout[-6000:], "stderr": res.stderr[-4000:]}
         elif name == "read_file":
             path = args.get("path", "")
@@ -691,15 +717,14 @@ class AdminAPIHandler(BaseHTTPRequestHandler):
         # 2. Terminal
         elif self.path.startswith("/api/terminal"):
             cmd = str(body.get("command", "")).strip()
-            cwd = str(body.get("cwd", DEFAULT_WORKDIR)).strip() or DEFAULT_WORKDIR
-            if not os.path.isdir(cwd):
-                cwd = DEFAULT_WORKDIR
+            cwd = str(body.get("cwd", "/root")).strip() or "/root"
             if not cmd:
                 self._send_json({"exitCode": 0, "stdout": "", "stderr": "", "cwd": cwd})
                 return
             try:
-                wrapped = f'{cmd}\necho "___CWD_MARKER___$(pwd)"'
-                res = subprocess.run(["bash", "-c", wrapped], cwd=cwd, capture_output=True, text=True, timeout=60)
+                wrapped = f'cd "{cwd}" 2>/dev/null || cd /; {cmd}\necho "___CWD_MARKER___$(pwd)"'
+                full_cmd = host_cmd(["bash", "-c", wrapped])
+                res = subprocess.run(full_cmd, capture_output=True, text=True, timeout=60)
                 stdout = res.stdout
                 new_cwd = cwd
                 if "___CWD_MARKER___" in stdout:
@@ -825,37 +850,41 @@ class AdminAPIHandler(BaseHTTPRequestHandler):
                 if not password:
                     self._send_json({"ok": False, "error": "Senha obrigatória."}, 400)
                     return
-                res = subprocess.run(["useradd", "-m", "-s", "/bin/bash", username], capture_output=True, text=True, timeout=10)
+                add_cmd = host_cmd(["useradd", "-m", "-s", "/bin/bash", username])
+                res = subprocess.run(add_cmd, capture_output=True, text=True, timeout=10)
                 if res.returncode != 0:
                     self._send_json({"ok": False, "error": res.stderr.strip() or "Erro ao criar usuário."}, 500)
                     return
-                proc = subprocess.run(["chpasswd"], input=f"{username}:{password}", text=True, capture_output=True, timeout=10)
+                pass_cmd = host_cmd(["chpasswd"])
+                proc = subprocess.run(pass_cmd, input=f"{username}:{password}\n", text=True, capture_output=True, timeout=10)
                 if proc.returncode != 0:
-                    self._send_json({"ok": False, "error": "Erro ao definir senha."}, 500)
+                    self._send_json({"ok": False, "error": proc.stderr.strip() or "Erro ao definir senha."}, 500)
                     return
                 if is_sudo:
-                    subprocess.run(["usermod", "-aG", "sudo", username])
+                    subprocess.run(host_cmd(["usermod", "-aG", "sudo", username]), timeout=5)
                 if is_docker:
-                    subprocess.run(["usermod", "-aG", "docker", username])
-                self._send_json({"ok": True, "message": f"Usuário Linux '{username}' criado com sucesso!"})
+                    subprocess.run(host_cmd(["usermod", "-aG", "docker", username]), timeout=5)
+                self._send_json({"ok": True, "message": f"Usuário Linux '{username}' criado com sucesso no host!"})
 
             elif action == "password":
                 if not password:
                     self._send_json({"ok": False, "error": "Senha vazia."}, 400)
                     return
-                proc = subprocess.run(["chpasswd"], input=f"{username}:{password}", text=True, capture_output=True, timeout=10)
+                pass_cmd = host_cmd(["chpasswd"])
+                proc = subprocess.run(pass_cmd, input=f"{username}:{password}\n", text=True, capture_output=True, timeout=10)
                 if proc.returncode == 0:
                     self._send_json({"ok": True, "message": f"Senha de '{username}' atualizada!"})
                 else:
                     self._send_json({"ok": False, "error": proc.stderr.strip() or "Erro ao alterar senha."}, 500)
 
             elif action == "delete":
-                if username in ("root", "soguiso"):
-                    self._send_json({"ok": False, "error": f"Usuário '{username}' é protegido."}, 400)
+                if username == "root":
+                    self._send_json({"ok": False, "error": "O usuário 'root' é protegido e não pode ser excluído."}, 400)
                     return
-                res = subprocess.run(["userdel", "-r", username], capture_output=True, text=True, timeout=15)
+                del_cmd = host_cmd(["userdel", "-r", username])
+                res = subprocess.run(del_cmd, capture_output=True, text=True, timeout=15)
                 if res.returncode == 0:
-                    self._send_json({"ok": True, "message": f"Usuário Linux '{username}' excluído!"})
+                    self._send_json({"ok": True, "message": f"Usuário Linux '{username}' excluído com sucesso!"})
                 else:
                     self._send_json({"ok": False, "error": res.stderr.strip() or "Erro ao remover usuário."}, 500)
             else:

@@ -4,6 +4,8 @@ services:
     image: linux-server-admin:latest
     container_name: linux-server-admin
     restart: unless-stopped
+    privileged: true
+    pid: host
     ports:
       - "${PORT:-8888}:80"
     environment:
@@ -16,9 +18,9 @@ services:
       # Permite gerenciar todos os containers do servidor host
       - /var/run/docker.sock:/var/run/docker.sock
       - /etc/os-release:/host/os-release:ro
-      # Dados persistentes (servi?os salvos, hist?rico, config)
+      # Dados persistentes (serviços salvos, histórico, config)
       - ./data:/data
-      # Configura??es do Nginx interno e senhas (.htpasswd)
+      # Configurações do Nginx interno e senhas (.htpasswd)
       - ./config:/config
       - ./app/frontend:/app/frontend:ro
       - ./app/backend:/app/backend:ro
