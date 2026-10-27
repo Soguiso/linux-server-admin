@@ -37,6 +37,11 @@ DEFAULT_WORKDIR = os.environ.get("DEFAULT_WORKDIR", "/workspace" if os.path.exis
 
 os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(os.path.dirname(HTPASSWD_PATH), exist_ok=True)
+if not os.path.exists(HTPASSWD_PATH):
+    try:
+        open(HTPASSWD_PATH, "a").close()
+    except Exception:
+        pass
 
 # Default Services Template if services.json does not exist
 # Clean default for new server installs (Auto-Discovery will detect real running containers)
@@ -772,28 +777,35 @@ class AdminAPIHandler(BaseHTTPRequestHandler):
             password = str(body.get("password", "")).strip()
 
             if not username or not re.match(r'^[a-zA-Z0-9_\-\.]+$', username):
-                self._send_json({"ok": False, "error": "Nome de usuário inválido."}, 400)
+                self._send_json({"ok": False, "error": "Nome de usu?rio inv?lido."}, 400)
                 return
+
+            os.makedirs(os.path.dirname(HTPASSWD_PATH), exist_ok=True)
+            file_is_new = (not os.path.exists(HTPASSWD_PATH)) or (os.path.getsize(HTPASSWD_PATH) == 0)
 
             if action in ("add", "update", "password"):
                 if not password:
-                    self._send_json({"ok": False, "error": "A senha não pode ser vazia."}, 400)
+                    self._send_json({"ok": False, "error": "A senha n?o pode ser vazia."}, 400)
                     return
-                res = subprocess.run(["htpasswd", "-b", HTPASSWD_PATH, username, password], capture_output=True, text=True, timeout=10)
+                cmd = ["htpasswd", "-bc", HTPASSWD_PATH, username, password] if file_is_new else ["htpasswd", "-b", HTPASSWD_PATH, username, password]
+                res = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
                 if res.returncode == 0:
                     subprocess.run(["nginx", "-s", "reload"], capture_output=True, text=True)
-                    self._send_json({"ok": True, "message": f"Usuário web '{username}' salvo com sucesso!"})
+                    self._send_json({"ok": True, "message": f"Usu?rio web '{username}' salvo com sucesso!"})
                 else:
                     self._send_json({"ok": False, "error": res.stderr.strip() or "Erro no htpasswd"}, 500)
             elif action == "delete":
+                if not os.path.exists(HTPASSWD_PATH) or os.path.getsize(HTPASSWD_PATH) == 0:
+                    self._send_json({"ok": True, "message": f"Usu?rio web '{username}' exclu?do!"})
+                    return
                 res = subprocess.run(["htpasswd", "-D", HTPASSWD_PATH, username], capture_output=True, text=True, timeout=10)
                 if res.returncode == 0:
                     subprocess.run(["nginx", "-s", "reload"], capture_output=True, text=True)
-                    self._send_json({"ok": True, "message": f"Usuário web '{username}' excluído!"})
+                    self._send_json({"ok": True, "message": f"Usu?rio web '{username}' exclu?do!"})
                 else:
-                    self._send_json({"ok": False, "error": res.stderr.strip() or "Falha ao remover usuário"}, 500)
+                    self._send_json({"ok": False, "error": res.stderr.strip() or "Falha ao remover usu?rio"}, 500)
             else:
-                self._send_json({"ok": False, "error": "Ação inválida."}, 400)
+                self._send_json({"ok": False, "error": "A??o inv?lida."}, 400)
 
         # 6. Linux System Users
         elif self.path.startswith("/api/users/system"):

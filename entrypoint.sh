@@ -2,6 +2,8 @@
 set -e
 
 echo "=== Iniciando Linux Server Admin (Beta) ==="
+mkdir -p /config
+touch /config/.htpasswd
 
 # Se n?o houver nginx.conf customizado em /config, copia o padr?o
 if [ ! -f /etc/nginx/nginx.conf ]; then
