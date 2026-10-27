@@ -921,19 +921,16 @@ Você pode me pedir qualquer tarefa em linguagem natural — tanto por aqui quan
     async function loadServices() {
       try {
         const res = await fetch("/api/services");
-        const data = await res.json();
-        if (data && Array.isArray(data.services) && data.services.length > 0) {
-          webServices = data.services;
+        if (res.ok) {
+          const data = await res.json();
+          if (data && Array.isArray(data.services) && data.services.length > 0) {
+            webServices = data.services;
+          }
         }
       } catch (e) {
         console.error("Erro ao carregar servi?os:", e);
       }
       renderWebServices();
-        <div class="section-title" id="services-sec-title">🌐 Aplicações & Painéis Web</div>
-        <button class="btn btn-secondary" onclick="openAddServiceModal()" style="font-size: 0.8rem; padding: 0.4rem 0.8rem; gap: 0.4rem;">+ Adicionar Serviço</button>
-      if (titleEl) {
-        titleEl.textContent = `?? Aplica??es & Pain?is Web (${webServices.length})`;
-      }
     }
 
     function openAddServiceModal() {
@@ -1206,11 +1203,11 @@ Você pode me pedir qualquer tarefa em linguagem natural — tanto por aqui quan
         const loadVal = data.load || (data.cpu ? data.cpu.usage : "N/A");
         document.getElementById("m-load").textContent = loadVal;
         
-        let memPct = data.memory ? (data.memory.percent || "") : "";
+        let memPct = (data.memory && data.memory.percent !== undefined) ? String(data.memory.percent) : "";
         if (memPct && !memPct.includes("%")) memPct += "%";
         document.getElementById("m-ram").textContent = data.memory ? `${data.memory.used} / ${data.memory.total} (${memPct})` : "N/A";
         
-        let diskPct = data.disk ? (data.disk.percent || "") : "";
+        let diskPct = (data.disk && data.disk.percent !== undefined) ? String(data.disk.percent) : "";
         if (diskPct && !diskPct.includes("%")) diskPct += "%";
         document.getElementById("m-disk").textContent = data.disk ? `${data.disk.used} / ${data.disk.total} (${diskPct})` : "N/A";
         document.getElementById("m-uptime").textContent = data.uptime || "Ativo";
