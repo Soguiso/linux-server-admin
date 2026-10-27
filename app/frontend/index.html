@@ -648,7 +648,8 @@
     <!-- TAB 1: SERVICES -->
     <div class="tab-pane active" id="tab-services">
       <div class="section-header">
-        <div class="section-title">🌐 Aplicações & Painéis Web (10)</div>
+        <div class="section-title" id="services-sec-title">🌐 Aplicações & Painéis Web</div>
+        <button class="btn btn-secondary" onclick="openAddServiceModal()" style="font-size: 0.8rem; padding: 0.4rem 0.8rem; gap: 0.4rem;">+ Adicionar Serviço</button>
       </div>
       <div id="discovery-banners" style="margin-bottom: 1.2rem; display: flex; flex-direction: column; gap: 0.8rem;"></div>
       <div class="grid" id="web-grid"></div>
@@ -928,7 +929,8 @@ Você pode me pedir qualquer tarefa em linguagem natural — tanto por aqui quan
         console.error("Erro ao carregar servi?os:", e);
       }
       renderWebServices();
-      const titleEl = document.getElementById("services-sec-title");
+        <div class="section-title" id="services-sec-title">🌐 Aplicações & Painéis Web</div>
+        <button class="btn btn-secondary" onclick="openAddServiceModal()" style="font-size: 0.8rem; padding: 0.4rem 0.8rem; gap: 0.4rem;">+ Adicionar Serviço</button>
       if (titleEl) {
         titleEl.textContent = `?? Aplica??es & Pain?is Web (${webServices.length})`;
       }
