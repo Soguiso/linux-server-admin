@@ -243,7 +243,7 @@ def discover_docker_services() -> list:
 def load_config() -> dict:
     cfg = {
         "gemini_api_key": os.environ.get("GEMINI_API_KEY", ""),
-        "gemini_model": os.environ.get("GEMINI_MODEL", "gemini-1.5-flash"),
+        "gemini_model": os.environ.get("GEMINI_MODEL", "gemini-3.5-flash"),
         "telegram_bot_token": os.environ.get("TELEGRAM_BOT_TOKEN", ""),
         "telegram_chat_id": os.environ.get("TELEGRAM_CHAT_ID", ""),
         "server_name": SERVER_NAME
@@ -546,8 +546,12 @@ def run_gemini_agent(channel: str, user_message: str, reset: bool = False) -> di
             "steps": []
         }
 
-    model = cfg.get("gemini_model", "gemini-1.5-flash")
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+    model = cfg.get("gemini_model", "gemini-3.5-flash")
+    candidate_models = [model]
+    for fb in ["gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-flash-latest"]:
+        if fb not in candidate_models:
+            candidate_models.append(fb)
+    current_model_idx = 0
 
     system_instruction = f"""Você é o Agente Administrador do Servidor Linux '{SERVER_NAME}', um copiloto inteligente de infraestrutura e DevOps.
 Você possui acesso root através das ferramentas `run_bash`, `read_file` e `write_file`.
@@ -582,15 +586,33 @@ Responda em português de forma clara, direta e objetiva."""
             }
         }
         data = json.dumps(payload).encode("utf-8")
-        req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
-        try:
-            with urllib.request.urlopen(req, timeout=45) as resp:
-                result = json.loads(resp.read().decode("utf-8"))
-        except urllib.error.HTTPError as e:
-            err_body = e.read().decode("utf-8", errors="replace")
-            return {"reply": f"Erro na API Gemini ({e.code}): {err_body}", "steps": steps_taken}
-        except Exception as e:
-            return {"reply": f"Erro de conexão com Gemini: {e}", "steps": steps_taken}
+        result = None
+        last_error = ""
+        while current_model_idx < len(candidate_models):
+            active_model = candidate_models[current_model_idx]
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{active_model}:generateContent?key={api_key}"
+            req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
+            try:
+                with urllib.request.urlopen(req, timeout=45) as resp:
+                    result = json.loads(resp.read().decode("utf-8"))
+                    break
+            except urllib.error.HTTPError as e:
+                err_body = e.read().decode("utf-8", errors="replace")
+                last_error = f"Erro na API Gemini ({e.code}): {err_body}"
+                if e.code in (503, 500, 404, 429) and current_model_idx + 1 < len(candidate_models):
+                    next_model = candidate_models[current_model_idx + 1]
+                    print(f"[{SERVER_NAME}] Gemini {active_model} falhou ({e.code}). Tentando fallback para {next_model}...")
+                    current_model_idx += 1
+                    continue
+                return {"reply": last_error, "steps": steps_taken}
+            except Exception as e:
+                last_error = f"Erro de conex?o com Gemini: {e}"
+                if current_model_idx + 1 < len(candidate_models):
+                    next_model = candidate_models[current_model_idx + 1]
+                    print(f"[{SERVER_NAME}] Gemini {active_model} falhou ({e}). Tentando fallback para {next_model}...")
+                    current_model_idx += 1
+                    continue
+                return {"reply": last_error, "steps": steps_taken}
 
         candidates = result.get("candidates", [])
         if not candidates:
@@ -685,7 +707,7 @@ class AdminAPIHandler(BaseHTTPRequestHandler):
                 "server_name": cfg.get("server_name", SERVER_NAME),
                 "hasGeminiKey": bool(key),
                 "maskedGeminiKey": masked,
-                "geminiModel": cfg.get("gemini_model", "gemini-1.5-flash"),
+                "geminiModel": cfg.get("gemini_model", "gemini-3.5-flash"),
                 "hasTelegram": bool(tg_token),
                 "maskedTelegram": masked_tg,
                 "telegramChatId": cfg.get("telegram_chat_id", "")
