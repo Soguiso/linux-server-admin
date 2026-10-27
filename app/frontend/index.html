@@ -1,0 +1,1711 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Soguiso Server — Central & Agente IA</title>
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --bg-card: rgba(22, 31, 51, 0.82);
+      --bg-card-hover: rgba(30, 41, 69, 0.96);
+      --border: rgba(148, 163, 184, 0.15);
+      --border-hover: rgba(56, 189, 248, 0.45);
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --indigo: #6366f1;
+      --green: #22c55e;
+      --red: #ef4444;
+      --amber: #f59e0b;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg);
+      background-image:
+        radial-gradient(at 15% 10%, rgba(56, 189, 248, 0.12) 0px, transparent 45%),
+        radial-gradient(at 85% 15%, rgba(99, 102, 241, 0.12) 0px, transparent 45%),
+        radial-gradient(at 50% 90%, rgba(16, 185, 129, 0.08) 0px, transparent 50%);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 1.75rem 1.25rem 3.5rem;
+    }
+
+    .container { max-width: 1220px; margin: 0 auto; }
+
+    /* Top Header */
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .brand { display: flex; align-items: center; gap: 0.95rem; }
+
+    .brand-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: 13px;
+      background: linear-gradient(135deg, #0ea5e9, #6366f1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.45rem;
+      box-shadow: 0 8px 20px rgba(14, 165, 233, 0.28);
+    }
+
+    .brand h1 { font-size: 1.45rem; font-weight: 700; letter-spacing: -0.02em; }
+    .brand p { color: var(--text-muted); font-size: 0.85rem; margin-top: 0.15rem; }
+
+    .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 0.65rem; }
+
+    .host-switcher {
+      display: inline-flex;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.22rem;
+    }
+
+    .host-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 0.42rem 0.8rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .host-btn.active {
+      background: rgba(56, 189, 248, 0.16);
+      color: var(--accent);
+      box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.35);
+    }
+
+    /* Live Metrics Bar */
+    .metrics-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0.85rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .metric-card {
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0.85rem 1.1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .metric-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .metric-value { font-size: 1rem; font-weight: 700; color: var(--text); margin-top: 0.2rem; font-family: ui-monospace, monospace; }
+
+    /* Navigation Tabs */
+    .tabs-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.85rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .tab-btn {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 0.6rem 1.15rem;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s;
+    }
+
+    .tab-btn:hover { color: var(--text); border-color: rgba(148, 163, 184, 0.35); }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, rgba(14, 165, 233, 0.22), rgba(99, 102, 241, 0.22));
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 4px 15px rgba(14, 165, 233, 0.18);
+    }
+
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    /* Services Grid */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 1.25rem 0 0.9rem;
+    }
+
+    .section-title {
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.05rem;
+    }
+
+    .card {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.25rem;
+      text-decoration: none;
+      color: inherit;
+      transition: all 0.2s ease;
+    }
+
+    a.card:hover {
+      transform: translateY(-3px);
+      background: var(--bg-card-hover);
+      border-color: var(--border-hover);
+      box-shadow: 0 12px 26px rgba(0, 0, 0, 0.35);
+    }
+
+    .card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.85rem; }
+    .service-info { display: flex; align-items: center; gap: 0.8rem; }
+    .service-icon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; }
+    .service-name { font-size: 1.04rem; font-weight: 600; }
+    .service-cat { font-size: 0.74rem; color: var(--text-muted); margin-top: 0.12rem; }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.71rem;
+      font-weight: 600;
+      padding: 0.22rem 0.55rem;
+      border-radius: 999px;
+      background: rgba(34, 197, 94, 0.12);
+      color: #4ade80;
+      border: 1px solid rgba(34, 197, 94, 0.25);
+    }
+
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 6px #4ade80; }
+    .status-pill.stopped { background: rgba(239, 68, 68, 0.12); color: #f87171; border-color: rgba(239, 68, 68, 0.25); }
+    .status-pill.stopped .status-dot { background: #f87171; box-shadow: 0 0 6px #f87171; }
+
+    .card-desc { font-size: 0.84rem; color: var(--text-muted); line-height: 1.45; margin-bottom: 1rem; }
+    .card-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 0.75rem; border-top: 1px solid rgba(148, 163, 184, 0.1); font-size: 0.76rem; }
+    .port-tag { font-family: ui-monospace, monospace; color: var(--accent); background: rgba(56, 189, 248, 0.1); padding: 0.18rem 0.5rem; border-radius: 6px; }
+
+    /* AI Agent Chat Interface (Antigravity Style) */
+    .chat-wrapper {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      height: 640px;
+      overflow: hidden;
+    }
+
+    .chat-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(15, 23, 42, 0.65);
+    }
+
+    .chat-header-info { display: flex; align-items: center; gap: 0.75rem; }
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .msg {
+      max-width: 85%;
+      padding: 0.95rem 1.15rem;
+      border-radius: 14px;
+      font-size: 0.92rem;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .msg.user {
+      align-self: flex-end;
+      background: linear-gradient(135deg, #0284c7, #4f46e5);
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+
+    .msg.agent {
+      align-self: flex-start;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 4px;
+    }
+
+    .tool-steps {
+      margin-bottom: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .tool-step {
+      background: rgba(30, 41, 59, 0.75);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 8px;
+      padding: 0.45rem 0.75rem;
+      font-family: ui-monospace, monospace;
+      font-size: 0.78rem;
+      color: #cbd5e1;
+    }
+
+    .tool-step summary { cursor: pointer; color: var(--accent); font-weight: 600; }
+    .tool-step pre { margin-top: 0.5rem; color: #94a3b8; overflow-x: auto; max-height: 180px; }
+
+    .quick-prompts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      padding: 0.65rem 1.25rem;
+      border-top: 1px solid var(--border);
+      background: rgba(15, 23, 42, 0.4);
+    }
+
+    .chip {
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.76rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .chip:hover { color: #fff; border-color: var(--accent); background: rgba(56, 189, 248, 0.15); }
+
+    .chat-input-bar {
+      display: flex;
+      gap: 0.65rem;
+      padding: 0.9rem 1.25rem;
+      border-top: 1px solid var(--border);
+      background: rgba(15, 23, 42, 0.8);
+    }
+
+    .chat-input-bar input {
+      flex: 1;
+      background: rgba(11, 15, 25, 0.9);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.75rem 1rem;
+      border-radius: 10px;
+      font-size: 0.92rem;
+      outline: none;
+    }
+
+    .chat-input-bar input:focus { border-color: var(--accent); }
+
+    .btn {
+      background: linear-gradient(135deg, #0ea5e9, #6366f1);
+      border: none;
+      color: #fff;
+      padding: 0.65rem 1.2rem;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.86rem;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .btn:hover { opacity: 0.92; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-secondary { background: rgba(30, 41, 59, 0.9); border: 1px solid var(--border); color: var(--text); }
+
+    /* Web Terminal */
+    .terminal-box {
+      background: #090d16;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      height: 560px;
+    }
+
+    .terminal-top {
+      background: #111827;
+      padding: 0.7rem 1.1rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-family: ui-monospace, monospace;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .terminal-output {
+      flex: 1;
+      padding: 1rem 1.2rem;
+      overflow-y: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.84rem;
+      line-height: 1.5;
+      color: #e2e8f0;
+      white-space: pre-wrap;
+    }
+
+    .terminal-input-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.1rem;
+      background: #0f172a;
+      border-top: 1px solid var(--border);
+      font-family: ui-monospace, monospace;
+    }
+
+    .prompt-label { color: #4ade80; font-weight: 700; font-size: 0.85rem; white-space: nowrap; }
+
+    .terminal-input-row input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-family: ui-monospace, monospace;
+      font-size: 0.88rem;
+      outline: none;
+    }
+
+    /* Container Manager buttons */
+    .action-row { display: flex; gap: 0.45rem; margin-top: 0.85rem; flex-wrap: wrap; }
+    .act-btn {
+      flex: 1;
+      padding: 0.45rem 0.65rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: rgba(15, 23, 42, 0.8);
+      color: var(--text);
+      font-size: 0.76rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .act-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* Modal Logs */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      z-index: 999;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      width: 100%;
+      max-width: 860px;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .modal-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-weight: 700;
+    }
+    .modal-body {
+      padding: 1rem 1.25rem;
+      overflow-y: auto;
+      font-family: ui-monospace, monospace;
+      font-size: 0.8rem;
+      white-space: pre-wrap;
+      color: #cbd5e1;
+    }
+  
+    /* User Management Styles */
+    .user-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.85rem 1rem;
+      border-radius: 12px;
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid var(--border);
+      margin-bottom: 0.65rem;
+      transition: all 0.15s ease;
+    }
+    .user-item:hover {
+      border-color: rgba(56, 189, 248, 0.4);
+      background: rgba(30, 41, 69, 0.75);
+    }
+    .user-meta { display: flex; align-items: center; gap: 0.85rem; }
+    .user-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+    .user-info-name { font-weight: 600; font-size: 0.95rem; color: var(--text); }
+    .user-info-sub { font-size: 0.76rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.45rem; margin-top: 0.2rem; }
+    .badge-tag {
+      font-size: 0.68rem;
+      padding: 0.15rem 0.45rem;
+      border-radius: 6px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .badge-sudo { background: rgba(245, 158, 11, 0.18); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.35); }
+    .badge-docker { background: rgba(56, 189, 248, 0.18); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); }
+    .badge-web { background: rgba(99, 102, 241, 0.18); color: #a5b4fc; border: 1px solid rgba(99, 102, 241, 0.35); }
+    .form-group { margin-bottom: 1.1rem; }
+    .form-label { display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.4rem; }
+    .form-input {
+      width: 100%;
+      padding: 0.65rem 0.85rem;
+      border-radius: 8px;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 0.9rem;
+      box-sizing: border-box;
+      outline: none;
+    }
+    .form-input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2); }
+    .form-checkbox { display: flex; align-items: center; gap: 0.55rem; font-size: 0.84rem; cursor: pointer; color: var(--text); }
+
+  
+    .discover-banner {
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(30, 41, 59, 0.75));
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      border-radius: 12px;
+      padding: 1.1rem 1.3rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.2rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), 0 0 15px rgba(56, 189, 248, 0.08);
+      animation: fadeIn 0.35s ease;
+      backdrop-filter: blur(12px);
+    }
+    @media (max-width: 768px) {
+      .discover-banner {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .discover-actions {
+        width: 100%;
+        justify-content: flex-end;
+      }
+    }
+    .discover-content {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      flex: 1;
+    }
+    .discover-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #38bdf8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .pulse-dot {
+      width: 7px;
+      height: 7px;
+      background: #38bdf8;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #38bdf8;
+      animation: pulse 1.8s infinite;
+    }
+    .discover-main {
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+    }
+    .discover-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      flex-shrink: 0;
+    }
+
+  
+    .service-logo {
+      width: 26px;
+      height: 26px;
+      object-fit: contain;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
+    }
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand">
+        <div class="brand-icon">🚀</div>
+        <div>
+          <h1>Soguiso Server</h1>
+          <p>Ubuntu 26.04 LTS • Central de Serviços & Agente IA</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- Live Metrics Bar -->
+    <div class="metrics-bar">
+      <div class="metric-card">
+        <div>
+          <div class="metric-label">⚡ Load Average</div>
+          <div class="metric-value" id="m-load">Carregando...</div>
+        </div>
+      </div>
+      <div class="metric-card">
+        <div>
+          <div class="metric-label">🧠 Memória RAM</div>
+          <div class="metric-value" id="m-ram">Carregando...</div>
+        </div>
+      </div>
+      <div class="metric-card">
+        <div>
+          <div class="metric-label">💾 Disco ( / )</div>
+          <div class="metric-value" id="m-disk">Carregando...</div>
+        </div>
+      </div>
+      <div class="metric-card">
+        <div>
+          <div class="metric-label">⏱️ Uptime</div>
+          <div class="metric-value" id="m-uptime">Carregando...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="tabs-bar">
+      <button class="tab-btn active" data-tab="tab-services">🌐 Painéis & Serviços</button>
+      <button class="tab-btn" data-tab="tab-agent">🤖 Agente IA (Antigravity Web)</button>
+      <button class="tab-btn" data-tab="tab-containers">🐳 Gerenciar Containers</button>
+      <button class="tab-btn" data-tab="tab-terminal">💻 Terminal Bash</button>
+      <button class="tab-btn" data-tab="tab-users">👥 Controle de Usuários</button>
+    </div>
+
+    <!-- TAB 1: SERVICES -->
+    <div class="tab-pane active" id="tab-services">
+      <div class="section-header">
+        <div class="section-title">🌐 Aplicações & Painéis Web (10)</div>
+      </div>
+      <div id="discovery-banners" style="margin-bottom: 1.2rem; display: flex; flex-direction: column; gap: 0.8rem;"></div>
+      <div class="grid" id="web-grid"></div>
+
+      <div class="section-header" style="margin-top: 2.2rem;">
+        <div class="section-title">⚙️ Nós & Serviços em Background (4)</div>
+      </div>
+      <div class="grid" id="bg-grid"></div>
+    </div>
+
+    <!-- TAB 2: AI AGENT -->
+    <div class="tab-pane" id="tab-agent">
+      <div class="chat-wrapper">
+        <div class="chat-header">
+          <div class="chat-header-info">
+            <span style="font-size: 1.4rem;">🤖</span>
+            <div>
+              <div style="font-weight: 700; font-size: 0.98rem;">Agente Administrador do Servidor (Google Gemini)</div>
+              <div style="font-size: 0.78rem; color: var(--text-muted);">Executa comandos bash, gerencia Docker e edita arquivos diretamente no Ubuntu • Integrado também ao seu Telegram</div>
+            </div>
+          </div>
+          <button class="btn btn-secondary" id="clear-chat-btn" style="padding: 0.45rem 0.85rem; font-size: 0.78rem;">🧹 Limpar Chat</button>
+        </div>
+
+        <div class="chat-messages" id="chat-messages">
+          <div class="msg agent">Olá! Sou o seu <b>Agente IA do Servidor Soguiso</b> (equipado com Google Gemini e acesso root ao Ubuntu).
+
+Você pode me pedir qualquer tarefa em linguagem natural — tanto por aqui quanto pelo seu <b>Bot do Telegram</b>. Por exemplo:
+• <i>"Qual o consumo atual de memória e quais processos mais gastam RAM?"</i>
+• <i>"Reinicie o container stirling-pdf e verifique se subiu saudável"</i>
+• <i>"Mostre as últimas 20 linhas de log do n8n"</i></div>
+        </div>
+
+        <div class="quick-prompts">
+          <button class="chip" data-prompt="Faça um resumo completo da saúde do servidor (CPU, RAM, Disco e temperatura/uptime).">📊 Saúde do Servidor</button>
+          <button class="chip" data-prompt="Liste todos os containers Docker rodando e o consumo de memória de cada um.">🐳 Consumo dos Containers</button>
+          <button class="chip" data-prompt="Mostre os 5 processos que estão consumindo mais CPU e RAM agora.">🔥 Top Processos</button>
+          <button class="chip" data-prompt="Verifique as últimas 15 linhas de log do container n8n.">📋 Logs do n8n</button>
+        </div>
+
+        <div class="chat-input-bar">
+          <input type="text" id="chat-input" placeholder="Peça qualquer comando ou tarefa para o Agente executar no servidor..." autocomplete="off" />
+          <button class="btn" id="chat-send-btn">Enviar ↵</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: CONTAINERS -->
+    <div class="tab-pane" id="tab-containers">
+      <div class="section-header">
+        <div class="section-title">🐳 Controle Direto de Containers Docker</div>
+        <button class="btn btn-secondary" onclick="loadOverview()" style="padding: 0.4rem 0.85rem; font-size: 0.78rem;">🔄 Atualizar</button>
+      </div>
+      <div class="grid" id="containers-mgr-grid"></div>
+    </div>
+
+    <!-- TAB 4: TERMINAL -->
+    <div class="tab-pane" id="tab-terminal">
+      <div class="terminal-box">
+        <div class="terminal-top">
+          <span>root@soguiso — Bash Remoto Direto</span>
+          <div style="display:flex; gap:0.4rem;">
+            <button class="chip" onclick="runTermCmd('docker ps')">docker ps</button>
+            <button class="chip" onclick="runTermCmd('df -h')">df -h</button>
+            <button class="chip" onclick="runTermCmd('free -h')">free -h</button>
+            <button class="chip" onclick="runTermCmd('ss -tulpn')">ss -tulpn</button>
+            <button class="chip" onclick="document.getElementById('term-out').textContent=''">Limpar</button>
+          </div>
+        </div>
+        <div class="terminal-output" id="term-out">Conectado ao terminal bash de soguiso (192.168.3.15). Digite qualquer comando abaixo.
+</div>
+        <div class="terminal-input-row">
+          <span class="prompt-label" id="term-cwd">root@soguiso:/home/soguiso#</span>
+          <input type="text" id="term-input" placeholder="Digite um comando bash (ex: ls -la, docker stats --no-stream)..." autocomplete="off" />
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: USERS MANAGEMENT -->
+    <div class="tab-pane" id="tab-users">
+      <div class="section-header">
+        <div class="section-title">👥 Controle de Usuários & Acessos</div>
+        <button class="btn btn-secondary" onclick="loadUsers()" style="padding: 0.45rem 0.95rem; font-size: 0.8rem; border-radius: 8px;">🔄 Atualizar</button>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 1.35rem; margin-top: 1rem;">
+        
+        <!-- CARD 1: USUÁRIOS WEB (.HTPASSWD) -->
+        <div class="card" style="padding: 1.4rem;">
+          <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.8rem; margin-bottom: 1.1rem;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(99, 102, 241, 0.2); display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">🌐</div>
+              <div>
+                <div style="font-weight: 700; font-size: 1.05rem;">Acesso Web (.htpasswd)</div>
+                <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 0.15rem;">Usuários autorizados no Nginx / Tailscale Funnel</div>
+              </div>
+            </div>
+            <button class="btn" onclick="openAddWebUserModal()" style="background: linear-gradient(135deg, #0ea5e9, #6366f1); color: #fff; padding: 0.45rem 0.9rem; font-size: 0.78rem; border-radius: 8px; font-weight: 600; cursor: pointer;">+ Novo Usuário</button>
+          </div>
+          <div id="web-users-list">
+            <div style="color: var(--text-muted); font-size: 0.85rem; padding: 1rem 0;">Carregando usuários...</div>
+          </div>
+        </div>
+
+        <!-- CARD 2: USUÁRIOS LINUX -->
+        <div class="card" style="padding: 1.4rem;">
+          <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.8rem; margin-bottom: 1.1rem;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(16, 185, 129, 0.2); display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">🐧</div>
+              <div>
+                <div style="font-weight: 700; font-size: 1.05rem;">Usuários do Sistema (Linux)</div>
+                <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 0.15rem;">Contas de login no Ubuntu Server (SSH e Shell)</div>
+              </div>
+            </div>
+            <button class="btn" onclick="openAddSystemUserModal()" style="background: linear-gradient(135deg, #10b981, #0ea5e9); color: #fff; padding: 0.45rem 0.9rem; font-size: 0.78rem; border-radius: 8px; font-weight: 600; cursor: pointer;">+ Novo Usuário Linux</button>
+          </div>
+          <div id="system-users-list">
+            <div style="color: var(--text-muted); font-size: 0.85rem; padding: 1rem 0;">Carregando usuários...</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Usuário Web -->
+  <div class="modal-backdrop" id="web-user-modal">
+    <div class="modal" style="max-width: 450px;">
+      <div class="modal-header">
+        <span id="web-user-modal-title">Novo Usuário de Acesso Web</span>
+        <button class="btn btn-secondary" onclick="closeModal('web-user-modal')" style="padding:0.35rem 0.75rem;">Fechar ✕</button>
+      </div>
+      <div class="modal-body" style="padding: 1.25rem;">
+        <div class="form-group">
+          <label class="form-label">Nome de Usuário (Login)</label>
+          <input type="text" id="web-username-input" class="form-input" placeholder="ex: rodrigo, equipe" autocomplete="off" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Senha</label>
+          <input type="password" id="web-password-input" class="form-input" placeholder="Digite uma senha segura" />
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 1.25rem;">
+          <button class="btn btn-secondary" onclick="closeModal('web-user-modal')">Cancelar</button>
+          <button class="btn" onclick="submitWebUser()" style="background: linear-gradient(135deg, #0ea5e9, #6366f1); color: #fff; padding: 0.55rem 1.2rem; border-radius: 8px; font-weight: 600;">Salvar Acesso</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Usuário Linux -->
+  <div class="modal-backdrop" id="system-user-modal">
+    <div class="modal" style="max-width: 480px;">
+      <div class="modal-header">
+        <span>Criar Novo Usuário Linux</span>
+        <button class="btn btn-secondary" onclick="closeModal('system-user-modal')" style="padding:0.35rem 0.75rem;">Fechar ✕</button>
+      </div>
+      <div class="modal-body" style="padding: 1.25rem;">
+        <div class="form-group">
+          <label class="form-label">Nome de Usuário (apenas minúsculas e números)</label>
+          <input type="text" id="sys-username-input" class="form-input" placeholder="ex: devuser, monitor" autocomplete="off" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Senha</label>
+          <input type="password" id="sys-password-input" class="form-input" placeholder="Digite a senha do sistema" />
+        </div>
+        <div style="margin-top: 1rem; padding: 0.75rem; border-radius: 8px; background: rgba(15,23,42,0.5); border: 1px solid var(--border);">
+          <div style="font-size: 0.78rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.5rem;">PERMISSÕES DO USUÁRIO</div>
+          <label class="form-checkbox" style="margin-bottom: 0.4rem;">
+            <input type="checkbox" id="sys-is-sudo" />
+            <span>Conceder acesso de <b>Administrador (sudo)</b></span>
+          </label>
+          <label class="form-checkbox">
+            <input type="checkbox" id="sys-is-docker" />
+            <span>Permitir gerenciar <b>Containers (grupo docker)</b></span>
+          </label>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 1.25rem;">
+          <button class="btn btn-secondary" onclick="closeModal('system-user-modal')">Cancelar</button>
+          <button class="btn" onclick="submitSystemUser()" style="background: linear-gradient(135deg, #10b981, #0ea5e9); color: #fff; padding: 0.55rem 1.2rem; border-radius: 8px; font-weight: 600;">Criar Usuário Linux</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Alterar Senha Genérico -->
+  <div class="modal-backdrop" id="change-pass-modal">
+    <div class="modal" style="max-width: 440px;">
+      <div class="modal-header">
+        <span id="change-pass-title">Alterar Senha</span>
+        <button class="btn btn-secondary" onclick="closeModal('change-pass-modal')" style="padding:0.35rem 0.75rem;">Fechar ✕</button>
+      </div>
+      <div class="modal-body" style="padding: 1.25rem;">
+        <div style="margin-bottom: 1rem; font-size: 0.88rem; color: var(--text-muted);">
+          Alterando senha para: <b id="change-pass-user" style="color: var(--accent);"></b> (<span id="change-pass-type"></span>)
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nova Senha</label>
+          <input type="password" id="new-password-input" class="form-input" placeholder="Digite a nova senha" />
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 1.25rem;">
+          <button class="btn btn-secondary" onclick="closeModal('change-pass-modal')">Cancelar</button>
+          <button class="btn" onclick="submitChangePassword()" style="background: linear-gradient(135deg, #f59e0b, #ef4444); color: #fff; padding: 0.55rem 1.2rem; border-radius: 8px; font-weight: 600;">Salvar Nova Senha</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Adicionar Servi?o -->
+  <div class="modal-backdrop" id="service-modal">
+    <div class="modal" style="max-width: 480px;">
+      <div class="modal-header">
+        <span>Adicionar Card de Servi?o</span>
+        <button class="btn btn-secondary" onclick="closeModal('service-modal')" style="padding:0.35rem 0.75rem;">Fechar ?</button>
+      </div>
+      <div class="modal-body" style="padding: 1.25rem;">
+        <div class="form-group">
+          <label class="form-label">Nome da Aplica??o</label>
+          <input type="text" id="svc-name-input" class="form-input" placeholder="ex: Grafana, Nextcloud, WordPress" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Categoria</label>
+          <input type="text" id="svc-cat-input" class="form-input" placeholder="ex: Monitoramento, Banco de Dados, Web" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Descri??o Resumida</label>
+          <input type="text" id="svc-desc-input" class="form-input" placeholder="Breve resumo da finalidade deste servi?o" />
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+          <div class="form-group">
+            <label class="form-label">Porta</label>
+            <input type="number" id="svc-port-input" class="form-input" placeholder="ex: 3000" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Protocolo</label>
+            <select id="svc-proto-input" class="form-input" style="height: 38px;">
+              <option value="http">HTTP</option>
+              <option value="https">HTTPS</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">?cone (Emoji)</label>
+          <input type="text" id="svc-icon-input" class="form-input" placeholder="ex: ??, ??, ??, ?" style="max-width: 120px;" />
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 1.25rem;">
+          <button class="btn btn-secondary" onclick="closeModal('service-modal')">Cancelar</button>
+          <button class="btn" onclick="submitNewService()" style="background: linear-gradient(135deg, #0ea5e9, #6366f1); color: #fff; padding: 0.55rem 1.2rem; border-radius: 8px; font-weight: 600;">Salvar Servi?o</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Logs -->
+  <div class="modal-backdrop" id="logs-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <span id="logs-title">Logs do Container</span>
+        <button class="btn btn-secondary" onclick="document.getElementById('logs-modal').classList.remove('open')" style="padding:0.35rem 0.75rem;">Fechar ✕</button>
+      </div>
+      <div class="modal-body" id="logs-content">Carregando...</div>
+    </div>
+  </div>
+
+  <script>
+    let webServices = [
+      {
+            "id": "authentik",
+            "name": "Authentik SSO",
+            "category": "Identidade & Autenticação MFA",
+            "desc": "Plataforma SSO, MFA biométrico (Face ID / WebAuthn) e controle de acesso.",
+            "protocol": "http",
+            "port": 9000,
+            "path": "",
+            "icon": "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/authentik.png",
+            "fallbackIcon": "🔐",
+            "color": "rgba(244, 63, 94, 0.18)"
+      },
+      {
+            "id": "npm",
+            "name": "Nginx Proxy Manager",
+            "category": "Proxy Reverso & SSL",
+            "desc": "Gerenciamento visual de domínios, certificados SSL Let's Encrypt e redirecionamentos.",
+            "protocol": "http",
+            "port": 81,
+            "path": "",
+            "icon": "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/nginx-proxy-manager.png",
+            "fallbackIcon": "🔀",
+            "color": "rgba(234, 88, 12, 0.18)"
+      },
+      {
+            "id": "portainer",
+            "name": "Portainer CE",
+            "category": "Gerenciamento Docker",
+            "desc": "Administração visual de containers, imagens, volumes, stacks e redes Docker.",
+            "protocol": "https",
+            "port": 9443,
+            "path": "",
+            "icon": "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/portainer.png",
+            "fallbackIcon": "🐳",
+            "color": "rgba(14, 165, 233, 0.18)"
+      },
+      {
+            "id": "n8n",
+            "name": "n8n",
+            "category": "Automação & IA",
+            "desc": "Plataforma de automação de fluxos de trabalho, integrações de API e agentes.",
+            "protocol": "http",
+            "port": 5678,
+            "path": "",
+            "icon": "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/n8n.png",
+            "fallbackIcon": "⚡",
+            "color": "rgba(249, 115, 22, 0.18)"
+      },
+      {
+            "id": "uptime-kuma",
+            "name": "Uptime Kuma",
+            "category": "Monitoramento de Status",
+            "desc": "Monitoramento contínuo de disponibilidade HTTP/TCP/Ping e alertas de serviços.",
+            "protocol": "http",
+            "port": 3001,
+            "path": "",
+            "icon": "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/uptime-kuma.png",
+            "fallbackIcon": "📈",
+            "color": "rgba(34, 197, 94, 0.18)"
+      },
+      {
+            "id": "netdata",
+            "name": "Netdata",
+            "category": "Telemetria em Tempo Real",
+            "desc": "Métricas detalhadas de CPU, RAM, disco, rede e containers em tempo real.",
+            "protocol": "http",
+            "port": 19999,
+            "path": "",
+            "icon": "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/netdata.png",
+            "fallbackIcon": "📊",
+            "color": "rgba(16, 185, 129, 0.18)"
+      },
+      {
+            "id": "stirling-pdf",
+            "name": "Stirling-PDF",
+            "category": "Utilitários de Documentos",
+            "desc": "Suíte completa para converter, juntar, dividir, comprimir e editar arquivos PDF.",
+            "protocol": "http",
+            "port": 8080,
+            "path": "",
+            "icon": "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/stirling-pdf.png",
+            "fallbackIcon": "📄",
+            "color": "rgba(239, 68, 68, 0.18)"
+      },
+      {
+            "id": "watchyourlan",
+            "name": "WatchYourLAN",
+            "category": "Scanner de Rede Local",
+            "desc": "Monitoramento de IPs, MACs e histórico de dispositivos conectados na sua LAN.",
+            "protocol": "http",
+            "port": 8840,
+            "path": "",
+            "icon": "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/watchyourlan.png",
+            "fallbackIcon": "📡",
+            "color": "rgba(59, 130, 246, 0.18)"
+      },
+      {
+            "id": "grass-node",
+            "name": "Grass Node (noVNC)",
+            "category": "Acesso Remoto Desktop",
+            "desc": "Interface gráfica via navegador (noVNC) do container Grass Node. Login/Senha VNC: money4band",
+            "protocol": "http",
+            "port": 6080,
+            "path": "/vnc_auto.html",
+            "cred": "money4band",
+            "icon": "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/novnc.png",
+            "fallbackIcon": "🌱",
+            "color": "rgba(132, 204, 22, 0.18)"
+      },
+      {
+            "id": "mysterium",
+            "name": "Mysterium Node",
+            "category": "Painel do Nó dVPN",
+            "desc": "Dashboard de controle, tráfego e ganhos do nó Mysterium Network (myst).",
+            "protocol": "http",
+            "port": 4449,
+            "path": "",
+            "icon": "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/mysterium.png",
+            "fallbackIcon": "🛡️",
+            "color": "rgba(168, 85, 247, 0.18)"
+      }
+];
+
+    async function loadServices() {
+      try {
+        const res = await fetch("/api/services");
+        const data = await res.json();
+        if (data && Array.isArray(data.services) && data.services.length > 0) {
+          webServices = data.services;
+        }
+      } catch (e) {
+        console.error("Erro ao carregar servi?os:", e);
+      }
+      renderWebServices();
+      const titleEl = document.getElementById("services-sec-title");
+      if (titleEl) {
+        titleEl.textContent = `?? Aplica??es & Pain?is Web (${webServices.length})`;
+      }
+    }
+
+    function openAddServiceModal() {
+      document.getElementById("svc-name-input").value = "";
+      document.getElementById("svc-cat-input").value = "";
+      document.getElementById("svc-desc-input").value = "";
+      document.getElementById("svc-port-input").value = "";
+      document.getElementById("svc-icon-input").value = "??";
+      document.getElementById("service-modal").classList.add("open");
+      document.getElementById("svc-name-input").focus();
+    }
+
+    async function submitNewService() {
+      const name = document.getElementById("svc-name-input").value.trim();
+      const category = document.getElementById("svc-cat-input").value.trim() || "Geral";
+      const desc = document.getElementById("svc-desc-input").value.trim() || "Servi?o hospedado no servidor.";
+      const port = parseInt(document.getElementById("svc-port-input").value.trim());
+      const protocol = document.getElementById("svc-proto-input").value;
+      const icon = document.getElementById("svc-icon-input").value.trim() || "??";
+
+      if (!name || isNaN(port)) {
+        alert("Preencha o nome do servi?o e a porta.");
+        return;
+      }
+
+      const colors = [
+        "rgba(14, 165, 233, 0.18)", "rgba(99, 102, 241, 0.18)",
+        "rgba(34, 197, 94, 0.18)", "rgba(245, 158, 11, 0.18)",
+        "rgba(239, 68, 68, 0.18)", "rgba(168, 85, 247, 0.18)"
+      ];
+      const color = colors[Math.floor(Math.random() * colors.length)];
+
+      const newSvc = { name, category, desc, port, protocol, icon, color, path: "" };
+
+      try {
+        const res = await fetch("/api/services", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "add", service: newSvc })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          closeModal("service-modal");
+          loadServices();
+        } else {
+          alert("Erro: " + (data.error || "Falha ao salvar"));
+        }
+      } catch (e) {
+        alert("Erro de conex?o: " + e.message);
+      }
+    }
+
+    const bgServices = [
+      { name: "Golem Provider", category: "Computação Descentralizada", desc: "Container golem-provider (yagna) ativo compartilhando recursos computacionais.", tag: "Container: golem-provider", icon: "🧱", color: "rgba(99, 102, 241, 0.18)" },
+      { name: "Honeygain", category: "Compartilhamento de Banda", desc: "Container priceless_villani executando em segundo plano no Docker.", tag: "Container: priceless_villani", icon: "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/honeygain.png", fallbackIcon: "🐝", color: "rgba(245, 158, 11, 0.18)" },
+      { name: "EarnApp", category: "Serviço Systemd", desc: "Daemon nativo earnapp.service rodando diretamente no Ubuntu host.", tag: "systemd: earnapp.service", icon: "💰", color: "rgba(20, 184, 166, 0.18)" },
+      { name: "Docker Telegram Monitor + IA", category: "Bot & Agente Gemini", desc: "Bot no Telegram integrado com Google Gemini e alertas em tempo real.", tag: "systemd: docker-telegram-monitor", icon: "🤖", color: "rgba(56, 189, 248, 0.18)" }
+    ];
+
+    
+    let discoveredCache = [];
+
+    async function checkDiscoveredServices() {
+      try {
+        const res = await fetch("/api/services/discover");
+        const data = await res.json();
+        discoveredCache = data.discovered || [];
+        renderDiscoveryBanners();
+      } catch (e) {
+        console.error("Erro no auto-discover:", e);
+      }
+    }
+
+    function renderDiscoveryBanners() {
+      const container = document.getElementById("discovery-banners");
+      if (!container) return;
+      if (!discoveredCache || discoveredCache.length === 0) {
+        container.innerHTML = "";
+        return;
+      }
+      container.innerHTML = discoveredCache.map(s => `
+        <div class="discover-banner" id="banner-${s.id}">
+          <div class="discover-content">
+            <div class="discover-badge"><span class="pulse-dot"></span>Novo Servi?o Docker Detectado</div>
+            <div class="discover-main">
+              <div class="service-icon" style="background:${s.color}; font-size:1.35rem; width:44px; height:44px;">${s.icon}</div>
+              <div style="flex:1;">
+                <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                  <span style="font-weight:700; font-size:1rem; color:#fff;">${s.name}</span>
+                  <span class="port-tag">${s.protocol.toUpperCase()} :${s.port}</span>
+                  <span style="font-size:0.75rem; color:var(--text-muted); background:rgba(255,255,255,0.06); padding:0.15rem 0.45rem; border-radius:4px;">${s.image}</span>
+                </div>
+                <div style="font-size:0.83rem; color:var(--text-muted); margin-top:0.25rem;">
+                  O container <code style="color:var(--accent); background:rgba(56,189,248,0.1); padding:0.1rem 0.35rem; border-radius:4px;">${s.container}</code> foi iniciado na porta ${s.port}. Deseja adicionar o atalho ao painel?
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="discover-actions">
+            <button class="btn" onclick="addDiscoveredService('${s.id}')" style="background:linear-gradient(135deg, #0ea5e9, #6366f1); color:#fff; font-size:0.84rem; padding:0.5rem 1rem; border-radius:8px; font-weight:600;">? Adicionar aos Atalhos</button>
+            <button class="btn btn-secondary" onclick="dismissDiscoveredService('${s.id}')" style="font-size:0.84rem; padding:0.5rem 0.8rem; border-radius:8px;">Ignorar ?</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    async function addDiscoveredService(id) {
+      const item = discoveredCache.find(s => s.id === id);
+      if (!item) return;
+
+      try {
+        const res = await fetch("/api/services", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "add", service: item })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          discoveredCache = discoveredCache.filter(s => s.id !== id);
+          renderDiscoveryBanners();
+          loadServices();
+        } else {
+          alert("Erro ao adicionar servi?o: " + (data.error || ""));
+        }
+      } catch (e) {
+        alert("Erro de conex?o: " + e.message);
+      }
+    }
+
+    async function dismissDiscoveredService(id) {
+      try {
+        await fetch("/api/services/discover/dismiss", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: id })
+        });
+      } catch (e) {}
+      discoveredCache = discoveredCache.filter(s => s.id !== id);
+      renderDiscoveryBanners();
+    }
+
+    let currentHost = (window.location.hostname && window.location.hostname !== "localhost") ? window.location.hostname : "192.168.3.15";
+
+    // Tabs switching
+    document.querySelectorAll(".tab-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".tab-btn").forEach((b) => b.classList.remove("active"));
+        document.querySelectorAll(".tab-pane").forEach((p) => p.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById(btn.dataset.tab).classList.add("active");
+      });
+    });
+
+    // Host switcher
+    const hostBtns = document.querySelectorAll(".host-btn");
+    hostBtns.forEach((btn) => {
+      if (btn.dataset.host === currentHost) {
+        hostBtns.forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+      }
+      btn.addEventListener("click", () => {
+        hostBtns.forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        currentHost = btn.dataset.host;
+        renderWebServices();
+      });
+    });
+
+    function renderWebServices() {
+      const grid = document.getElementById("web-grid");
+      grid.innerHTML = "";
+      webServices.forEach((s) => {
+        const url = s.customUrl ? s.customUrl : `${s.protocol}://${currentHost}:${s.port}${s.path || ""}`;
+        const card = document.createElement("a");
+        card.className = "card";
+        card.href = url;
+        card.target = "_blank";
+        card.rel = "noopener noreferrer";
+        card.innerHTML = `
+          <div>
+            <div class="card-top">
+              <div class="service-info">
+                <div class="service-icon" style="background:${s.color}">
+                ${(s.icon && (s.icon.startsWith('http') || s.icon.endsWith('.png') || s.icon.endsWith('.svg'))) 
+                  ? `<img src="${s.icon}" alt="${s.name}" class="service-logo" onerror="this.onerror=null; this.parentElement.textContent='${s.fallbackIcon || '🌐'}';" />` 
+                  : (s.icon || '🌐')}
+              </div>
+                <div>
+                  <div class="service-name">${s.name}</div>
+                  <div class="service-cat">${s.category}</div>
+                </div>
+              </div>
+              <div class="status-pill"><span class="status-dot"></span>Ativo</div>
+            </div>
+            <div class="card-desc">${s.desc}${s.cred ? `<div style="margin-top:0.55rem;"><span style="display:inline-flex;align-items:center;gap:0.35rem;background:rgba(132,204,22,0.14);border:1px solid rgba(132,204,22,0.35);color:#bef264;padding:0.2rem 0.55rem;border-radius:6px;font-family:ui-monospace,monospace;font-size:0.78rem;">🔑 Login VNC: <strong>${s.cred}</strong></span></div>` : ""}</div>
+          </div>
+          <div class="card-footer">
+            <span class="port-tag">${s.tagLabel || `${s.protocol.toUpperCase()} :${s.port}${s.path || ""}`}</span>
+            <span style="color:var(--text-muted)">Abrir painel ↗</span>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function renderBgServices() {
+      const grid = document.getElementById("bg-grid");
+      grid.innerHTML = "";
+      bgServices.forEach((s) => {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <div>
+            <div class="card-top">
+              <div class="service-info">
+                <div class="service-icon" style="background:${s.color}">
+                ${(s.icon && (s.icon.startsWith('http') || s.icon.endsWith('.png') || s.icon.endsWith('.svg'))) 
+                  ? `<img src="${s.icon}" alt="${s.name}" class="service-logo" onerror="this.onerror=null; this.parentElement.textContent='${s.fallbackIcon || '🌐'}';" />` 
+                  : (s.icon || '🌐')}
+              </div>
+                <div>
+                  <div class="service-name">${s.name}</div>
+                  <div class="service-cat">${s.category}</div>
+                </div>
+              </div>
+              <div class="status-pill"><span class="status-dot"></span>Rodando</div>
+            </div>
+            <div class="card-desc">${s.desc}</div>
+          </div>
+          <div class="card-footer">
+            <span class="port-tag">${s.tag}</span>
+            <span style="color:var(--text-muted)">Background</span>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    // Overview & Container Manager
+    async function loadOverview() {
+      try {
+        const res = await fetch("/api/overview");
+        const data = await res.json();
+        const loadVal = data.load || (data.cpu ? data.cpu.usage : "N/A");
+        document.getElementById("m-load").textContent = loadVal;
+        
+        let memPct = data.memory ? (data.memory.percent || "") : "";
+        if (memPct && !memPct.includes("%")) memPct += "%";
+        document.getElementById("m-ram").textContent = data.memory ? `${data.memory.used} / ${data.memory.total} (${memPct})` : "N/A";
+        
+        let diskPct = data.disk ? (data.disk.percent || "") : "";
+        if (diskPct && !diskPct.includes("%")) diskPct += "%";
+        document.getElementById("m-disk").textContent = data.disk ? `${data.disk.used} / ${data.disk.total} (${diskPct})` : "N/A";
+        document.getElementById("m-uptime").textContent = data.uptime || "Ativo";
+
+        const mgr = document.getElementById("containers-mgr-grid");
+        mgr.innerHTML = "";
+        (data.containers || []).forEach((c) => {
+          const card = document.createElement("div");
+          card.className = "card";
+          const pillClass = c.running ? "status-pill" : "status-pill stopped";
+          const pillText = c.running ? "Rodando" : "Parado";
+          card.innerHTML = `
+            <div>
+              <div class="card-top">
+                <div class="service-info">
+                  <div class="service-icon" style="background:rgba(56,189,248,0.14)">📦</div>
+                  <div>
+                    <div class="service-name">${c.name}</div>
+                    <div class="service-cat">${c.image}</div>
+                  </div>
+                </div>
+                <div class="${pillClass}"><span class="status-dot"></span>${pillText}</div>
+              </div>
+              <div class="card-desc" style="margin-bottom:0.5rem;">Status: ${c.status}</div>
+            </div>
+            <div class="action-row">
+              <button class="act-btn" onclick="containerAction('${c.name}', 'restart')">🔄 Reiniciar</button>
+              ${c.running
+                ? `<button class="act-btn" onclick="containerAction('${c.name}', 'stop')">⏹️ Parar</button>`
+                : `<button class="act-btn" onclick="containerAction('${c.name}', 'start')">▶️ Iniciar</button>`
+              }
+              <button class="act-btn" onclick="containerAction('${c.name}', 'logs')">📋 Logs</button>
+            </div>
+          `;
+          mgr.appendChild(card);
+        });
+      } catch (e) {
+        console.error("Erro ao carregar overview:", e);
+      }
+    }
+
+    async function containerAction(name, action) {
+      if (action === "logs") {
+        document.getElementById("logs-title").textContent = `📋 Últimos Logs: ${name}`;
+        document.getElementById("logs-content").textContent = "Carregando logs...";
+        document.getElementById("logs-modal").classList.add("open");
+      }
+      try {
+        const res = await fetch("/api/container", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, action })
+        });
+        const data = await res.json();
+        if (action === "logs") {
+          document.getElementById("logs-content").textContent = data.logs || data.error || "Sem logs.";
+        } else {
+          await loadOverview();
+    loadUsers();
+        }
+      } catch (e) {
+        alert("Erro ao executar ação: " + e.message);
+      }
+    }
+
+    // AI Agent Chat
+    const chatMessages = document.getElementById("chat-messages");
+    const chatInput = document.getElementById("chat-input");
+    const chatSendBtn = document.getElementById("chat-send-btn");
+
+    function escapeHtml(str) {
+      return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    async function sendChatMessage(text) {
+      const msg = (text ?? chatInput.value).trim();
+      if (!msg) return;
+      chatInput.value = "";
+      chatSendBtn.disabled = true;
+
+      const userDiv = document.createElement("div");
+      userDiv.className = "msg user";
+      userDiv.textContent = msg;
+      chatMessages.appendChild(userDiv);
+
+      const loadingDiv = document.createElement("div");
+      loadingDiv.className = "msg agent";
+      loadingDiv.innerHTML = "<i>🤖 Analisando e executando ferramentas no servidor Ubuntu...</i>";
+      chatMessages.appendChild(loadingDiv);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+
+      try {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: msg })
+        });
+        const data = await res.json();
+        let htmlOut = "";
+        if (data.steps && data.steps.length > 0) {
+          htmlOut += `<div class="tool-steps">`;
+          data.steps.forEach((st) => {
+            const label = st.tool === "run_bash"
+              ? `⚙️ Executou: $ ${escapeHtml(st.args.command || "")}`
+              : `⚙️ Ferramenta: ${escapeHtml(st.tool)}(${escapeHtml(st.args.path || "")})`;
+            const details = st.result
+              ? escapeHtml(st.result.stdout || st.result.content || JSON.stringify(st.result))
+              : "";
+            htmlOut += `<details class="tool-step"><summary>${label}</summary><pre>${details}</pre></details>`;
+          });
+          htmlOut += `</div>`;
+        }
+        htmlOut += `<div>${escapeHtml(data.reply || data.error || "Sem resposta")}</div>`;
+        loadingDiv.innerHTML = htmlOut;
+        loadOverview();
+      } catch (e) {
+        loadingDiv.textContent = "❌ Erro ao contatar o Agente IA: " + e.message;
+      } finally {
+        chatSendBtn.disabled = false;
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+    }
+
+    chatSendBtn.addEventListener("click", () => sendChatMessage());
+    chatInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") sendChatMessage();
+    });
+
+    document.querySelectorAll(".quick-prompts .chip").forEach((chip) => {
+      chip.addEventListener("click", () => sendChatMessage(chip.dataset.prompt));
+    });
+
+    document.getElementById("clear-chat-btn").addEventListener("click", async () => {
+      await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: "", reset: true })
+      });
+      chatMessages.innerHTML = `<div class="msg agent">🧹 Histórico da conversa limpo! Como posso ajudar no servidor agora?</div>`;
+    });
+
+    // Web Terminal
+    let termCwd = "/home/soguiso";
+    const termInput = document.getElementById("term-input");
+    const termOut = document.getElementById("term-out");
+
+    async function runTermCmd(cmdOverride) {
+      const cmd = (cmdOverride ?? termInput.value).trim();
+      if (!cmd) return;
+      if (!cmdOverride) termInput.value = "";
+      termOut.textContent += `\nroot@soguiso:${termCwd}# ${cmd}\n`;
+      termOut.scrollTop = termOut.scrollHeight;
+
+      try {
+        const res = await fetch("/api/terminal", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ command: cmd, cwd: termCwd })
+        });
+        const data = await res.json();
+        if (data.cwd) {
+          termCwd = data.cwd;
+          document.getElementById("term-cwd").textContent = `root@soguiso:${termCwd}#`;
+        }
+        if (data.stdout) termOut.textContent += data.stdout;
+        if (data.stderr) termOut.textContent += data.stderr;
+      } catch (e) {
+        termOut.textContent += `Erro: ${e.message}\n`;
+      }
+      termOut.scrollTop = termOut.scrollHeight;
+    }
+
+    termInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") runTermCmd();
+    });
+
+    renderWebServices();
+    loadServices();
+    checkDiscoveredServices();
+    renderBgServices();
+    loadOverview();
+    setInterval(() => {
+      loadOverview();
+      checkDiscoveredServices();
+    }, 15000);
+  
+    // ==========================================
+    // USER MANAGEMENT MODULE
+    // ==========================================
+    function closeModal(id) {
+      document.getElementById(id).classList.remove("open");
+    }
+
+    async function loadUsers() {
+      const webContainer = document.getElementById("web-users-list");
+      const sysContainer = document.getElementById("system-users-list");
+      if (!webContainer || !sysContainer) return;
+
+      try {
+        const res = await fetch("/api/users");
+        const data = await res.json();
+
+        // Render Web Users
+        if (data.web_users && data.web_users.length > 0) {
+          webContainer.innerHTML = data.web_users.map(u => `
+            <div class="user-item">
+              <div class="user-meta">
+                <div class="user-avatar">🌐</div>
+                <div>
+                  <div class="user-info-name">${u}</div>
+                  <div class="user-info-sub">
+                    <span class="badge-tag badge-web">HTTP Basic Auth</span>
+                    <span>• Nginx / Tailscale</span>
+                  </div>
+                </div>
+              </div>
+              <div style="display: flex; gap: 0.4rem;">
+                <button class="chip" onclick="openChangePass('web', '${u}')" title="Alterar Senha">🔑 Senha</button>
+                <button class="chip" onclick="deleteUser('web', '${u}')" style="color: #f87171; border-color: rgba(239,68,68,0.3);" title="Excluir">🗑️</button>
+              </div>
+            </div>
+          `).join("");
+        } else {
+          webContainer.innerHTML = `<div style="color: var(--text-muted); font-size: 0.85rem; padding: 1rem 0;">Nenhum usuário configurado.</div>`;
+        }
+
+        // Render System Users
+        if (data.system_users && data.system_users.length > 0) {
+          sysContainer.innerHTML = data.system_users.map(u => {
+            const isProtected = (u.username === 'root' || u.username === 'soguiso');
+            return `
+              <div class="user-item">
+                <div class="user-meta">
+                  <div class="user-avatar" style="background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.3);">🐧</div>
+                  <div>
+                    <div class="user-info-name">
+                      ${u.username} 
+                      ${u.gecos ? `<span style="font-weight: 400; font-size: 0.78rem; color: var(--text-muted);">(${u.gecos})</span>` : ''}
+                    </div>
+                    <div class="user-info-sub">
+                      <span>UID: ${u.uid}</span>
+                      ${u.is_sudo ? '<span class="badge-tag badge-sudo">SUDO</span>' : ''}
+                      ${u.is_docker ? '<span class="badge-tag badge-docker">DOCKER</span>' : ''}
+                      <span>${u.shell}</span>
+                    </div>
+                  </div>
+                </div>
+                <div style="display: flex; gap: 0.4rem;">
+                  <button class="chip" onclick="openChangePass('system', '${u.username}')" title="Alterar Senha">🔑 Senha</button>
+                  ${isProtected ? '' : `<button class="chip" onclick="deleteUser('system', '${u.username}')" style="color: #f87171; border-color: rgba(239,68,68,0.3);" title="Excluir">🗑️</button>`}
+                </div>
+              </div>
+            `;
+          }).join("");
+        } else {
+          sysContainer.innerHTML = `<div style="color: var(--text-muted); font-size: 0.85rem; padding: 1rem 0;">Nenhum usuário encontrado.</div>`;
+        }
+      } catch (err) {
+        console.error("Erro ao carregar usuários:", err);
+      }
+    }
+
+    function openAddWebUserModal() {
+      document.getElementById("web-username-input").value = "";
+      document.getElementById("web-password-input").value = "";
+      document.getElementById("web-user-modal").classList.add("open");
+      document.getElementById("web-username-input").focus();
+    }
+
+    function openAddSystemUserModal() {
+      document.getElementById("sys-username-input").value = "";
+      document.getElementById("sys-password-input").value = "";
+      document.getElementById("sys-is-sudo").checked = false;
+      document.getElementById("sys-is-docker").checked = true;
+      document.getElementById("system-user-modal").classList.add("open");
+      document.getElementById("sys-username-input").focus();
+    }
+
+    let currentPassType = "";
+    let currentPassUser = "";
+
+    function openChangePass(type, username) {
+      currentPassType = type;
+      currentPassUser = username;
+      document.getElementById("change-pass-title").textContent = `Alterar Senha: ${username}`;
+      document.getElementById("change-pass-user").textContent = username;
+      document.getElementById("change-pass-type").textContent = type === 'web' ? 'Acesso Web' : 'Linux';
+      document.getElementById("new-password-input").value = "";
+      document.getElementById("change-pass-modal").classList.add("open");
+      document.getElementById("new-password-input").focus();
+    }
+
+    async function submitWebUser() {
+      const username = document.getElementById("web-username-input").value.trim();
+      const password = document.getElementById("web-password-input").value;
+      if (!username || !password) {
+        alert("Preencha o usuário e a senha.");
+        return;
+      }
+      try {
+        const res = await fetch("/api/users/web", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "add", username, password })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          closeModal("web-user-modal");
+          loadUsers();
+          alert(data.message || "Usuário web criado com sucesso!");
+        } else {
+          alert("Erro: " + (data.error || "Falha ao salvar"));
+        }
+      } catch (e) {
+        alert("Erro de conexão: " + e.message);
+      }
+    }
+
+    async function submitSystemUser() {
+      const username = document.getElementById("sys-username-input").value.trim().toLowerCase();
+      const password = document.getElementById("sys-password-input").value;
+      const is_sudo = document.getElementById("sys-is-sudo").checked;
+      const is_docker = document.getElementById("sys-is-docker").checked;
+      if (!username || !password) {
+        alert("Preencha o usuário e a senha.");
+        return;
+      }
+      try {
+        const res = await fetch("/api/users/system", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "add", username, password, is_sudo, is_docker })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          closeModal("system-user-modal");
+          loadUsers();
+          alert(data.message || "Usuário Linux criado com sucesso!");
+        } else {
+          alert("Erro: " + (data.error || "Falha ao criar usuário"));
+        }
+      } catch (e) {
+        alert("Erro de conexão: " + e.message);
+      }
+    }
+
+    async function submitChangePassword() {
+      const password = document.getElementById("new-password-input").value;
+      if (!password) {
+        alert("Digite a nova senha.");
+        return;
+      }
+      const endpoint = currentPassType === 'web' ? '/api/users/web' : '/api/users/system';
+      try {
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "password", username: currentPassUser, password })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          closeModal("change-pass-modal");
+          alert(data.message || "Senha atualizada com sucesso!");
+        } else {
+          alert("Erro: " + (data.error || "Falha ao atualizar senha"));
+        }
+      } catch (e) {
+        alert("Erro: " + e.message);
+      }
+    }
+
+    async function deleteUser(type, username) {
+      if (!confirm(`Tem certeza que deseja excluir o usuário ${type === 'web' ? 'web' : 'do sistema'} "${username}"?`)) {
+        return;
+      }
+      const endpoint = type === 'web' ? '/api/users/web' : '/api/users/system';
+      try {
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "delete", username })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          loadUsers();
+          alert(data.message || "Usuário excluído!");
+        } else {
+          alert("Erro: " + (data.error || "Falha ao excluir"));
+        }
+      } catch (e) {
+        alert("Erro: " + e.message);
+      }
+    }
+
+    // Auto-load users when tab is clicked
+    document.querySelectorAll(".tab-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        if (btn.dataset.tab === "tab-users") {
+          loadUsers();
+        }
+      });
+    });
+
+  </script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+[
+  {
+    "id": "portainer",
+    "name": "Portainer CE",
+    "category": "Gerenciamento Docker",
+    "desc": "Administração visual de containers, imagens, volumes, stacks e redes Docker.",
+    "protocol": "https",
+    "port": 9443,
+    "path": "",
+    "icon": "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/portainer.png",
+    "fallbackIcon": "🐳",
+    "color": "rgba(14, 165, 233, 0.18)"
+  },
+  {
+    "id": "npm",
+    "name": "Nginx Proxy Manager",
+    "category": "Proxy Reverso & SSL",
+    "desc": "Gerenciamento visual de domínios, certificados SSL Let's Encrypt e redirecionamentos.",
+    "protocol": "http",
+    "port": 81,
+    "path": "",
+    "icon": "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/nginx-proxy-manager.png",
+    "fallbackIcon": "🔀",
+    "color": "rgba(234, 88, 12, 0.18)"
+  },
+  {
+    "id": "uptime-kuma",
+    "name": "Uptime Kuma",
+    "category": "Monitoramento de Status",
+    "desc": "Monitoramento contínuo de disponibilidade HTTP/TCP/Ping e alertas de serviços.",
+    "protocol": "http",
+    "port": 3001,
+    "path": "",
+    "icon": "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/uptime-kuma.png",
+    "fallbackIcon": "📈",
+    "color": "rgba(34, 197, 94, 0.18)"
+  },
+  {
+    "id": "authentik",
+    "name": "Authentik SSO",
+    "category": "Identidade & Autenticação MFA",
+    "desc": "Plataforma SSO, MFA biométrico (Face ID / WebAuthn) e controle de acesso.",
+    "protocol": "http",
+    "port": 9000,
+    "path": "",
+    "icon": "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/authentik.png",
+    "fallbackIcon": "🔐",
+    "color": "rgba(244, 63, 94, 0.18)"
+  }
+]

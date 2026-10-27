@@ -1,0 +1,23 @@
+services:
+  linux-server-admin:
+    build: .
+    image: linux-server-admin:latest
+    container_name: linux-server-admin
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8888}:80"
+    environment:
+      - SERVER_NAME=${SERVER_NAME:-Linux Server Admin}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-1.5-flash}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
+    volumes:
+      # Permite gerenciar todos os containers do servidor host
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Dados persistentes (servi?os salvos, hist?rico, config)
+      - ./data:/data
+      # Configura??es do Nginx interno e senhas (.htpasswd)
+      - ./config:/config
+      - ./app/frontend:/app/frontend:ro
+      - ./app/backend:/app/backend:ro

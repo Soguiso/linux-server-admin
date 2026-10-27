@@ -1,0 +1,23 @@
+# Environments & Secrets
+.env
+.env.local
+*.env
+
+# Python cache & runtime
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Config & Passwords (passwords must never be in git)
+config/.htpasswd
+*.htpasswd
+
+# Persistent runtime data (use services.example.json as template)
+data/*.json
+!data/services.example.json
+
+# OS specific files
+.DS_Store
+Thumbs.db
