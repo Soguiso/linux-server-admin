@@ -180,44 +180,44 @@ def guess_service_info(container_name: str, image_name: str, port: int):
     c_lower = container_name.lower()
     img_lower = image_name.lower()
     presets = {
-        "grafana": ("Grafana", "Monitoramento & M?tricas", "??"),
-        "prometheus": ("Prometheus", "M?tricas & S?ries Temporais", "??"),
-        "pihole": ("Pi-hole", "DNS & Bloqueador de An?ncios", "???"),
-        "adguard": ("AdGuard Home", "DNS & Privacidade", "???"),
-        "plex": ("Plex Media Server", "M?dia & Streaming", "??"),
-        "jellyfin": ("Jellyfin", "M?dia & Streaming", "??"),
-        "emby": ("Emby Server", "M?dia & Streaming", "??"),
-        "syncthing": ("Syncthing", "Sincroniza??o de Arquivos", "??"),
-        "nextcloud": ("Nextcloud", "Nuvem Privada & Arquivos", "??"),
-        "owncloud": ("OwnCloud", "Nuvem Privada & Arquivos", "??"),
-        "transmission": ("Transmission", "Cliente BitTorrent", "??"),
-        "qbittorrent": ("qBittorrent", "Cliente BitTorrent", "??"),
-        "deluge": ("Deluge", "Cliente BitTorrent", "??"),
-        "vaultwarden": ("Vaultwarden", "Cofre de Senhas", "??"),
-        "bitwarden": ("Bitwarden", "Cofre de Senhas", "??"),
-        "homeassistant": ("Home Assistant", "Automa??o Residencial", "??"),
-        "nodered": ("Node-RED", "Automa??o IoT", "??"),
-        "wireguard": ("WireGuard", "VPN & Rede", "??"),
-        "openvpn": ("OpenVPN", "VPN & Rede", "??"),
-        "redis": ("Redis Commander", "Banco de Dados Redis", "???"),
-        "mongo": ("Mongo Express", "Banco de Dados Mongo", "??"),
-        "pgadmin": ("pgAdmin", "Administra??o PostgreSQL", "??"),
-        "phpmyadmin": ("phpMyAdmin", "Administra??o MySQL", "??"),
-        "dozzle": ("Dozzle", "Visualizador de Logs Docker", "??"),
-        "glances": ("Glances", "Monitoramento de Sistema", "??"),
-        "code": ("VS Code Server", "Desenvolvimento / IDE", "??"),
-        "filebrowser": ("File Browser", "Gerenciador de Arquivos", "??"),
-        "guacamole": ("Apache Guacamole", "Acesso Remoto", "???"),
-        "portainer": ("Portainer", "Gerenciamento Docker", "??"),
-        "authentik": ("Authentik", "Identidade & SSO", "??"),
-        "npm": ("Nginx Proxy Manager", "Proxy Reverso", "??"),
-        "uptime": ("Uptime Kuma", "Monitoramento", "??"),
+        "grafana": ("Grafana", "Monitoramento & Métricas", "📊"),
+        "prometheus": ("Prometheus", "Métricas & Séries Temporais", "📈"),
+        "pihole": ("Pi-hole", "DNS & Bloqueador de Anúncios", "🛡️"),
+        "adguard": ("AdGuard Home", "DNS & Privacidade", "🛡️"),
+        "plex": ("Plex Media Server", "Mídia & Streaming", "🎬"),
+        "jellyfin": ("Jellyfin", "Mídia & Streaming", "🍿"),
+        "emby": ("Emby Server", "Mídia & Streaming", "📺"),
+        "syncthing": ("Syncthing", "Sincronização de Arquivos", "🔄"),
+        "nextcloud": ("Nextcloud", "Nuvem Privada & Arquivos", "☁️"),
+        "owncloud": ("OwnCloud", "Nuvem Privada & Arquivos", "☁️"),
+        "transmission": ("Transmission", "Cliente BitTorrent", "📥"),
+        "qbittorrent": ("qBittorrent", "Cliente BitTorrent", "📥"),
+        "deluge": ("Deluge", "Cliente BitTorrent", "💧"),
+        "vaultwarden": ("Vaultwarden", "Cofre de Senhas", "🔐"),
+        "bitwarden": ("Bitwarden", "Cofre de Senhas", "🔐"),
+        "homeassistant": ("Home Assistant", "Automação Residencial", "🏠"),
+        "nodered": ("Node-RED", "Automação IoT", "🔴"),
+        "wireguard": ("WireGuard", "VPN & Rede", "🔒"),
+        "openvpn": ("OpenVPN", "VPN & Rede", "🛡️"),
+        "redis": ("Redis Commander", "Banco de Dados Redis", "🗄️"),
+        "mongo": ("Mongo Express", "Banco de Dados Mongo", "🍃"),
+        "pgadmin": ("pgAdmin", "Administração PostgreSQL", "🐘"),
+        "phpmyadmin": ("phpMyAdmin", "Administração MySQL", "🐬"),
+        "dozzle": ("Dozzle", "Visualizador de Logs Docker", "📋"),
+        "glances": ("Glances", "Monitoramento de Sistema", "📊"),
+        "code": ("VS Code Server", "Desenvolvimento / IDE", "💻"),
+        "filebrowser": ("File Browser", "Gerenciador de Arquivos", "📁"),
+        "guacamole": ("Apache Guacamole", "Acesso Remoto", "🥑"),
+        "portainer": ("Portainer", "Gerenciamento Docker", "🐳"),
+        "authentik": ("Authentik", "Identidade & SSO", "🔐"),
+        "npm": ("Nginx Proxy Manager", "Proxy Reverso", "🔀"),
+        "uptime": ("Uptime Kuma", "Monitoramento", "📈"),
     }
     for key, (display_name, category, icon) in presets.items():
         if key in c_lower or key in img_lower:
             return display_name, category, icon
     clean_name = container_name.replace("-", " ").replace("_", " ").title()
-    return clean_name, "Aplica??o Web", "??"
+    return clean_name, "Aplicação Web", "🌐"
 
 def discover_docker_services() -> list:
     configured_services = load_services()
@@ -286,7 +286,7 @@ def discover_docker_services() -> list:
                     "image": image,
                     "name": display_name,
                     "category": category,
-                    "desc": f"Container '{name}' detectado em execu??o na porta {port}.",
+                    "desc": f"Container '{name}' detectado em execução na porta {port}.",
                     "port": port,
                     "protocol": protocol,
                     "icon": icon,
@@ -1007,6 +1007,26 @@ def get_telegram_creds():
         chat_id_int = None
     return token.strip(), chat_id_int
 
+def markdown_to_telegram_html(md: str) -> str:
+    """Converte Markdown do Gemini para tags HTML nativas suportadas pelo Telegram."""
+    if not md:
+        return ""
+    text = html.escape(md)
+    # Fenced code
+    text = re.sub(r"```(?:\w+)?\n?(.*?)```", r"<pre>\1</pre>", text, flags=re.DOTALL)
+    # Inline code
+    text = re.sub(r"`([^`\n]+)`", r"<code>\1</code>", text)
+    # Bold **text**
+    text = re.sub(r"\*\*([^*]+)\*\*", r"<b>\1</b>", text)
+    text = re.sub(r"__([^_]+)__", r"<b>\1</b>", text)
+    # Italic *text*
+    text = re.sub(r"(?<!\*)\*([^*\n]+)\*(?!\*)", r"<i>\1</i>", text)
+    # Headers ###
+    text = re.sub(r"^#{1,6}\s*(.+)$", r"<b>\1</b>", text, flags=re.MULTILINE)
+    # List bullets * or -
+    text = re.sub(r"^[\*\-]\s+", "• ", text, flags=re.MULTILINE)
+    return text
+
 def telegram_api(method: str, payload: dict) -> dict:
     token, _ = get_telegram_creds()
     if not token:
@@ -1611,7 +1631,7 @@ def handle_telegram_updates():
                                     cmds.append(f"<code>{html.escape(st['tool'])}({html.escape(str(st['args'].get('path', '')))})</code>")
                             steps_summary = "⚙️ <b>Comandos executados:</b>\n" + "\n".join(f"• {c}" for c in cmds) + "\n\n"
 
-                        final_msg = f"{steps_summary}🤖 <b>Resposta:</b>\n{html.escape(reply_text)}"
+                        final_msg = f"{steps_summary}🤖 <b>Resposta:</b>\n{markdown_to_telegram_html(reply_text)}"
                         if wait_msg_id:
                             edit_message_text(wait_msg_id, final_msg)
                         else:
@@ -1634,10 +1654,9 @@ def start_telegram_bot_if_needed():
             threading.Thread(target=handle_docker_events, daemon=True).start()
             ensure_grass_chromium()
             send_message(
-                f"""?? <b>Agente IA Gemini & Painel Web Ativados!</b>
-Servidor: <code>{SERVER_NAME}</code>
-
-?? Monitoramento de containers e comandos do Telegram restabelecidos com sucesso!"""
+                f"""🚀 <b>Agente IA Gemini & Painel Web Ativados!</b>\n"""
+                f"""Servidor: <code>{SERVER_NAME}</code>\n\n"""
+                f"""🤖 Monitoramento de containers e comandos do Telegram restabelecidos com sucesso!"""
             )
             print(f"[{SERVER_NAME}] Telegram Bot e Monitor Docker iniciados com sucesso!")
         except Exception as e:
