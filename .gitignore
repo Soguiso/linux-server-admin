@@ -3,6 +3,10 @@
 .env.local
 *.env
 
+# Docker compose overrides (host specific networks or ports)
+docker-compose.override.yml
+*.override.yml
+
 # Python cache & runtime
 __pycache__/
 *.py[cod]
