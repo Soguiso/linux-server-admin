@@ -37,11 +37,14 @@ DEFAULT_WORKDIR = os.environ.get("DEFAULT_WORKDIR", "/workspace" if os.path.exis
 
 os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(os.path.dirname(HTPASSWD_PATH), exist_ok=True)
-if not os.path.exists(HTPASSWD_PATH):
+if not os.path.exists(HTPASSWD_PATH) or os.path.getsize(HTPASSWD_PATH) == 0:
+    admin_user = os.environ.get("WEB_USER", "admin")
+    admin_pass = os.environ.get("WEB_PASSWORD", "admin")
     try:
-        open(HTPASSWD_PATH, "a").close()
-    except Exception:
-        pass
+        subprocess.run(["htpasswd", "-bc", HTPASSWD_PATH, admin_user, admin_pass], capture_output=True, text=True, timeout=10)
+        print(f"[Segurança] Criado usuário web inicial: {admin_user}")
+    except Exception as e:
+        print(f"[Segurança] Erro ao criar .htpasswd inicial: {e}")
 
 # Default Services Template if services.json does not exist
 # Clean default for new server installs (Auto-Discovery will detect real running containers)

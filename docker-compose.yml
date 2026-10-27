@@ -27,3 +27,4 @@ services:
       - ./config:/config
       - ./app/frontend:/app/frontend:ro
       - ./app/backend:/app/backend:ro
+      - ./entrypoint.sh:/entrypoint.sh

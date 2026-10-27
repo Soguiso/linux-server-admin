@@ -4,12 +4,14 @@ set -e
 echo "=== Iniciando Linux Server Admin ==="
 mkdir -p /config
 
-# Se houver nginx.conf em /config, sincroniza com /etc/nginx/nginx.conf; senao usa o default
+# Sempre copia /config/nginx.conf (do volume do host) para /etc/nginx/nginx.conf
 if [ -f /config/nginx.conf ]; then
-    cp /config/nginx.conf /etc/nginx/nginx.conf
+    echo "=== [Config] Sincronizando /config/nginx.conf para /etc/nginx/ ==="
+    cp -f /config/nginx.conf /etc/nginx/nginx.conf
 else
-    cp /app/config/nginx.conf /etc/nginx/nginx.conf
-    cp /app/config/nginx.conf /config/nginx.conf
+    echo "=== [Config] Inicializando /config/nginx.conf padrao ==="
+    cp -f /app/config/nginx.conf /etc/nginx/nginx.conf
+    cp -f /app/config/nginx.conf /config/nginx.conf
 fi
 
 # Gerenciamento de Usuário Web Inicial (.htpasswd)
